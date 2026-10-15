@@ -1,0 +1,74 @@
+.button {
+  min-height: var(--tap-size);
+  padding: 0 var(--space-lg);
+  border: var(--border-control) solid transparent;
+  border-radius: var(--radius-lg);
+  font-weight: var(--weight-button);
+  white-space: nowrap;
+  cursor: pointer;
+}
+
+.button:disabled {
+  opacity: 0.5;
+  cursor: default;
+}
+
+/* Botones con sombra sólida: al pulsar se "hunden" (se desplazan y la sombra se reduce) */
+.primary,
+.secondary {
+  box-shadow: var(--shadow-hard-sm);
+}
+
+.primary:not(:disabled):active,
+.secondary:not(:disabled):active {
+  transform: translate(2px, 2px);
+  box-shadow: var(--shadow-pressed);
+}
+
+.ghost:not(:disabled):active,
+.danger:not(:disabled):active {
+  opacity: 0.7;
+}
+
+/* Hover solo con ratón (en el iPhone se quedaría "pegado" tras tocar) */
+@media (hover: hover) {
+  .button:not(:disabled):hover {
+    filter: brightness(1.06);
+  }
+}
+
+/* ButtonLink: un <a> con aspecto de botón */
+.link {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  text-decoration: none;
+}
+
+.compact {
+  min-height: 38px;
+  padding: 0 var(--space-md);
+}
+
+.primary {
+  background: var(--color-primary);
+  border-color: var(--color-primary-border);
+  color: var(--color-primary-text);
+}
+
+.secondary {
+  background: var(--color-surface-alt);
+  border-color: var(--color-border-strong);
+  color: var(--color-text);
+}
+
+.danger {
+  background: transparent;
+  border-color: var(--color-danger);
+  color: var(--color-danger);
+}
+
+.ghost {
+  background: transparent;
+  color: var(--color-accent);
+}

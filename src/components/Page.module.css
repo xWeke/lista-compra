@@ -1,0 +1,88 @@
+.page {
+  display: flex;
+  flex-direction: column;
+  min-height: 100dvh;
+}
+
+.header {
+  position: sticky;
+  top: 0;
+  z-index: 10;
+  padding-top: env(safe-area-inset-top);
+  background: var(--color-header-bg);
+  border-bottom: var(--border-control) solid var(--color-border);
+}
+
+.headerInner,
+.main,
+.footer {
+  width: 100%;
+  max-width: var(--max-width);
+  margin: 0 auto;
+}
+
+.headerInner {
+  display: flex;
+  align-items: center;
+  gap: var(--space-sm);
+  min-height: 56px;
+  padding: 0 var(--space-md);
+}
+
+.back {
+  display: grid;
+  place-items: center;
+  min-width: var(--tap-size);
+  min-height: var(--tap-size);
+  margin-left: calc(-1 * var(--space-sm));
+  padding-bottom: var(--space-xs);
+  border-radius: var(--radius-sm);
+  font-size: var(--font-icon);
+  line-height: 1;
+  color: var(--color-accent);
+  text-decoration: none;
+}
+
+.back:active {
+  background: var(--color-surface-alt);
+}
+
+.title {
+  composes: display from global;
+  flex: 1;
+  min-width: 0;
+  padding-top: var(--display-offset);
+  font-size: var(--font-title);
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.actions {
+  display: flex;
+  gap: var(--space-xs);
+}
+
+.main {
+  flex: 1;
+  padding: var(--space-lg);
+  padding-bottom: calc(var(--space-lg) + env(safe-area-inset-bottom));
+}
+
+/* Con pie fijo, el margen de la barra de inicio lo pone el pie */
+.main:has(+ .footer) {
+  padding-bottom: var(--space-lg);
+}
+
+.footer {
+  position: sticky;
+  bottom: 0;
+  padding: var(--space-md) var(--space-lg);
+  padding-bottom: calc(var(--space-md) + env(safe-area-inset-bottom));
+  background: var(--color-bg);
+  border-top: var(--border-control) solid var(--color-border);
+}
+
+.footer > * {
+  width: 100%;
+}

@@ -1,0 +1,24 @@
+<!doctype html>
+<html lang="es">
+  <head>
+    <meta charset="UTF-8" />
+    <!-- viewport-fit=cover: en iPhone la app ocupa también la zona del notch (se compensa con safe-area en CSS) -->
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover" />
+    <title>Lista de la compra</title>
+    <meta name="description" content="Lista de la compra compartida en tiempo real" />
+    <!-- Color de la barra del navegador/estado: igual que la cabecera, en claro y en oscuro -->
+    <meta name="theme-color" content="#fffdf7" media="(prefers-color-scheme: light)" />
+    <meta name="theme-color" content="#030712" media="(prefers-color-scheme: dark)" />
+    <link rel="icon" href="/favicon.ico" sizes="48x48" />
+    <link rel="icon" href="/icon.svg" type="image/svg+xml" />
+    <!-- iPhone: icono y modo pantalla completa al "Añadir a pantalla de inicio" -->
+    <link rel="apple-touch-icon" href="/apple-touch-icon-180x180.png" />
+    <meta name="apple-mobile-web-app-capable" content="yes" />
+    <meta name="apple-mobile-web-app-status-bar-style" content="default" />
+    <meta name="apple-mobile-web-app-title" content="Compra" />
+  </head>
+  <body>
+    <div id="root"></div>
+    <script type="module" src="/src/main.tsx"></script>
+  </body>
+</html>

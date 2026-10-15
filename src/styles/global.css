@@ -1,0 +1,213 @@
+/* Estilos globales y TEMA. Los colores y medidas se usan siempre vía variables: var(--color-text)…
+   Estilo por defecto "Colorful" (el alternativo, Neobrutalism, está en theme-neobrutalism.css) (typeui.sh): crema + verde con sombras sólidas desplazadas y titulares en Luckiest Guy.
+   Valores tomados de la demo real (claro y oscuro) y ajustados para cumplir contraste WCAG AA. */
+
+:root {
+  color-scheme: light; /* controles nativos (scroll, inputs) en claro; en oscuro lo cambia el bloque de abajo */
+
+  /* Fondos */
+  --color-bg: #fffdf7; /* crema: página, cabecera, tarjetas */
+  --color-surface: #fffdf7;
+  --color-surface-alt: #fef5e4; /* controles: inputs, chips, botones secundarios */
+
+  /* Texto */
+  --color-text: #1a1a1a;
+  --color-text-muted: #636a76;
+
+  /* Bordes */
+  --color-border: #d4c4aa; /* tarjetas y separadores */
+  --color-border-strong: #c8b898; /* controles */
+
+  /* Verde: relleno de botones (con texto blanco) y acento (textos, iconos, foco) */
+  --color-primary: #1f7b45;
+  --color-primary-border: #18633a;
+  --color-primary-text: #ffffff;
+  --color-accent: #1f7b45;
+
+  /* Elemento seleccionado (chip activo) */
+  --color-selected-bg: #edfbf2;
+  --color-selected-border: #a3e4b8;
+  --color-selected-text: #18633a;
+
+  /* Sombra sólida desplazada, seña del estilo */
+  --color-shadow: #1d6e3d;
+  --shadow-hard: 4px 4px 0 var(--color-shadow);
+  --shadow-hard-sm: 3px 3px 0 var(--color-shadow);
+  --shadow-pressed: 1px 1px 0 var(--color-shadow);
+
+  --color-danger: #c70036;
+  --color-checked: #8f8a84; /* productos comprados: atenuados pero legibles */
+  --color-on-checked: #ffffff; /* el ✓ sobre el círculo de "comprado" */
+  --color-backdrop: rgb(26 26 26 / 0.45);
+
+  --space-xs: 4px;
+  --space-sm: 8px;
+  --space-md: 12px;
+  --space-lg: 16px;
+  --space-xl: 24px;
+
+  --radius-sm: 8px;
+  --radius-md: 12px;
+  --radius-lg: 16px;
+  --radius-pill: 999px;
+  --radius-check: 50%; /* círculo de "comprado" */
+  --color-check: var(--color-accent); /* borde del círculo sin marcar */
+
+  /* Estructura (lo que cambia entre estilos además del color) */
+  --border-card: 1px; /* tarjetas y filas */
+  --border-control: 2px; /* inputs, botones, chips, cabecera */
+  --shadow-input: none;
+  --color-header-bg: var(--color-bg);
+
+  /* Tipografía: Inter para leer; Luckiest Guy (mayúsculas) solo para títulos */
+  --font-body: 'Inter Variable', system-ui, -apple-system, 'Segoe UI', Roboto, sans-serif;
+  --font-display: 'Luckiest Guy', 'Inter Variable', system-ui, sans-serif;
+  --display-weight: 400; /* Luckiest Guy solo tiene un grosor */
+  --display-spacing: 0.02em;
+  --display-offset: 3px; /* Luckiest Guy asienta bajo: lo centra ópticamente en la cabecera */
+  --weight-name: 500; /* nombres de producto */
+  --weight-button: 600;
+
+  --font-sm: 13px;
+  --font-md: 16px; /* 16px mínimo en inputs: si es menor, Safari en iPhone hace zoom al escribir */
+  --font-lg: 18px;
+  --font-xl: 24px;
+  --font-title: 22px; /* título de página en Luckiest Guy */
+  --font-icon: 30px; /* símbolos grandes, p. ej. la flecha "‹" de volver */
+
+  --max-width: 720px;
+  --tap-size: 44px; /* tamaño mínimo cómodo para el dedo */
+
+  font-family: var(--font-body);
+  font-size: var(--font-md);
+  line-height: 1.4;
+  color: var(--color-text);
+  background: var(--color-bg);
+  -webkit-text-size-adjust: 100%;
+  -webkit-tap-highlight-color: transparent; /* sin recuadro gris al tocar en iOS */
+}
+
+/* Modo oscuro: lo activa src/lib/theme.ts con <html data-theme="dark"> (por elección del usuario o,
+   en "Automático", si el sistema está en oscuro). */
+:root[data-theme='dark'] {
+  color-scheme: dark;
+  --color-bg: #030712;
+  --color-surface: #101828;
+  --color-surface-alt: #1e2939;
+  --color-text: #f3f4f6;
+  --color-text-muted: #9ca3af;
+  --color-border: #1f2937;
+  --color-border-strong: #374151;
+  --color-primary: #1f7b45; /* mismo relleno que en claro: el verde claro de la demo no da contraste con texto blanco */
+  --color-primary-border: #2a9d58;
+  --color-primary-text: #ffffff;
+  --color-accent: #4cc973;
+  --color-selected-bg: #0c2f18;
+  --color-selected-border: #144d28;
+  --color-selected-text: #a3e4b8;
+  --color-shadow: #1d6e3d;
+  --color-danger: #ff6b81; /* el rojo de la demo no se lee sobre fondo oscuro */
+  --color-checked: #6b7280;
+  --color-on-checked: #f3f4f6;
+  --color-backdrop: rgb(0 0 0 / 0.6);
+}
+
+*,
+*::before,
+*::after {
+  box-sizing: border-box;
+}
+
+html,
+body {
+  margin: 0;
+  min-height: 100%;
+  background: var(--color-bg);
+}
+
+body {
+  /* Márgenes seguros laterales del iPhone (notch en horizontal). Los de arriba/abajo los ponen
+     la cabecera y el pie fijos de <Page>, para que no queden bajo la barra de estado ni la de inicio. */
+  padding: 0 env(safe-area-inset-right) 0 env(safe-area-inset-left);
+}
+
+button,
+input,
+textarea,
+select {
+  font: inherit;
+  color: inherit;
+}
+
+/* Sin espera ni zoom por doble toque (p. ej. al pulsar "+" varias veces seguidas) */
+a,
+button,
+input,
+textarea,
+label {
+  touch-action: manipulation;
+}
+
+input,
+textarea {
+  width: 100%;
+  min-height: var(--tap-size);
+  padding: var(--space-sm) var(--space-md);
+  font-size: var(--font-md);
+  background: var(--color-surface-alt);
+  border: var(--border-control) solid var(--color-border-strong);
+  border-radius: var(--radius-lg);
+  box-shadow: var(--shadow-input);
+}
+
+input::placeholder,
+textarea::placeholder {
+  color: var(--color-text-muted);
+}
+
+a:focus-visible,
+input:focus-visible,
+textarea:focus-visible,
+button:focus-visible {
+  outline: 2px solid var(--color-accent);
+  outline-offset: 2px;
+}
+
+/* Titulares del estilo: Luckiest Guy en mayúsculas (solo títulos; el texto usa Inter) */
+.display {
+  font-family: var(--font-display);
+  font-weight: var(--display-weight);
+  text-transform: uppercase;
+  letter-spacing: var(--display-spacing);
+  line-height: 1.1;
+}
+
+textarea {
+  resize: vertical;
+}
+
+ul {
+  margin: 0;
+  padding: 0;
+  list-style: none;
+}
+
+h1,
+h2,
+h3,
+p {
+  margin: 0;
+}
+
+/* Texto solo para lectores de pantalla (etiquetas de campos que visualmente usan placeholder) */
+.visually-hidden {
+  position: absolute;
+  width: 1px;
+  height: 1px;
+  padding: 0;
+  margin: -1px;
+  overflow: hidden;
+  clip: rect(0 0 0 0);
+  white-space: nowrap;
+  border: 0;
+}

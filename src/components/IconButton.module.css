@@ -1,0 +1,26 @@
+.button {
+  min-width: 38px;
+  min-height: 38px;
+  padding: 0;
+  border: none;
+  border-radius: var(--radius-sm);
+  background: transparent;
+  color: var(--color-text-muted);
+  font-size: var(--font-lg);
+  cursor: pointer;
+}
+
+.button:disabled {
+  opacity: 0.3;
+  cursor: default;
+}
+
+.button:not(:disabled):active {
+  background: var(--color-surface-alt);
+}
+
+@media (hover: hover) {
+  .button:not(:disabled):hover {
+    background: var(--color-surface-alt);
+  }
+}

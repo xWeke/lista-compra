@@ -1,0 +1,18 @@
+{
+  "$schema": "./node_modules/oxlint/configuration_schema.json",
+  "plugins": ["react", "typescript", "oxc"],
+  "ignorePatterns": ["dist", "dev-dist", "dist-e2e", "playwright-report", "test-results"],
+  "rules": {
+    "react/rules-of-hooks": "error",
+    "react/exhaustive-deps": "warn",
+    "react/only-export-components": ["warn", { "allowConstantExport": true, "allowExportNames": ["useAuth"] }]
+  },
+  "overrides": [
+    {
+      "files": ["tests/**"],
+      "rules": {
+        "react/rules-of-hooks": "off"
+      }
+    }
+  ]
+}

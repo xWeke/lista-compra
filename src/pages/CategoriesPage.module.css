@@ -1,0 +1,17 @@
+.row {
+  display: flex;
+  align-items: center;
+  padding: var(--space-xs) var(--space-xs) var(--space-xs) var(--space-lg);
+  margin-bottom: var(--space-md);
+  border: var(--border-card) solid var(--color-border);
+  border-radius: var(--radius-lg);
+  background: var(--color-surface);
+  box-shadow: var(--shadow-hard-sm);
+}
+
+.name {
+  flex: 1;
+  min-width: 0;
+  font-weight: var(--weight-name);
+  overflow-wrap: anywhere;
+}

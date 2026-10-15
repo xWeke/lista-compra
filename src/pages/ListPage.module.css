@@ -1,0 +1,12 @@
+.sectionHeader {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: var(--space-sm);
+  margin: var(--space-lg) 0 var(--space-sm);
+}
+
+.sectionTitle {
+  composes: display from global;
+  font-size: var(--font-md);
+}

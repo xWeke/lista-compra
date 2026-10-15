@@ -1,0 +1,31 @@
+.row {
+  display: flex;
+  flex-wrap: wrap;
+  gap: var(--space-sm);
+}
+
+.chip {
+  min-width: 44px; /* chips de una letra ("g", "l") también deben ser fáciles de tocar */
+  min-height: 38px;
+  padding: var(--space-xs) var(--space-md);
+  border: var(--border-control) solid var(--color-border-strong);
+  border-radius: var(--radius-pill);
+  background: var(--color-surface-alt);
+  font-size: var(--font-sm);
+  font-weight: 500;
+  cursor: pointer;
+}
+
+@media (hover: hover) {
+  .chip:hover {
+    border-color: var(--color-text-muted);
+  }
+}
+
+.chip[aria-pressed='true'] {
+  background: var(--color-selected-bg);
+  border-color: var(--color-selected-border);
+  color: var(--color-selected-text);
+  font-weight: 600;
+  box-shadow: 2px 2px 0 var(--color-shadow);
+}

@@ -1,0 +1,16 @@
+.row {
+  display: inline-flex;
+  align-items: center;
+  align-self: flex-start;
+  padding: 0 var(--space-xs);
+  border: var(--border-control) solid var(--color-border-strong);
+  border-radius: var(--radius-lg);
+  background: var(--color-surface-alt);
+}
+
+.value {
+  min-width: 80px;
+  text-align: center;
+  font-weight: 600;
+  font-variant-numeric: tabular-nums;
+}

@@ -1,0 +1,40 @@
+.dialog {
+  padding: 0;
+  border: var(--border-control) solid var(--color-border);
+  background: var(--color-bg);
+  color: var(--color-text);
+  width: calc(100% - 2 * var(--space-lg));
+  overflow-y: auto;
+  overscroll-behavior: contain; /* el scroll del panel no mueve la página de detrás */
+}
+
+.dialog:focus {
+  outline: none; /* el foco en el propio panel no debe dibujar marco */
+}
+
+.dialog::backdrop {
+  background: var(--color-backdrop);
+}
+
+.content {
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-md);
+  padding: var(--space-lg);
+}
+
+.center {
+  max-width: 420px;
+  border-radius: var(--radius-lg);
+  box-shadow: var(--shadow-hard);
+}
+
+.sheet {
+  width: 100%;
+  max-width: var(--max-width);
+  max-height: 90dvh;
+  margin: auto auto 0;
+  border-bottom: none;
+  border-radius: var(--radius-lg) var(--radius-lg) 0 0;
+  padding-bottom: env(safe-area-inset-bottom);
+}

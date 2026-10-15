@@ -1,0 +1,32 @@
+.wrapper {
+  margin-bottom: var(--space-md);
+}
+
+.row {
+  display: flex;
+  gap: var(--space-sm);
+}
+
+.suggestions {
+  margin-top: var(--space-sm);
+  overflow: hidden;
+  border: var(--border-control) solid var(--color-border-strong);
+  border-radius: var(--radius-lg);
+  background: var(--color-surface);
+  box-shadow: var(--shadow-hard-sm);
+}
+
+.suggestion {
+  width: 100%;
+  padding: var(--space-md);
+  border: none;
+  background: transparent;
+  text-align: left;
+  cursor: pointer;
+}
+
+.suggestion:active,
+.suggestion:hover {
+  background: var(--color-selected-bg);
+  color: var(--color-selected-text);
+}

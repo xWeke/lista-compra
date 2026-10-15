@@ -1,0 +1,6 @@
+# Finales de línea LF en el repo y en la copia de trabajo (Prettier y el CI de Linux esperan LF),
+# aunque la configuración global de git en Windows tenga core.autocrlf=true.
+* text=auto eol=lf
+*.png binary
+*.ico binary
+*.woff2 binary
