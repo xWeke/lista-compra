@@ -33,5 +33,5 @@ Lista_Compra es una SPA (React + Vite, sin servidor) en **español**, usada sobr
 - **`autoFocus` en móvil**: solo donde el usuario acaba de pedir escribir (p. ej. el campo de "Nueva lista"); nunca al abrir paneles de edición.
 - **Márgenes seguros**: cabecera fija y pie fijo no deben quedar bajo el notch ni la barra inferior en modo PWA.
 - **Textos de usuario largos** (nombres de producto, notas, listas) no deben desbordar ni romper la fila.
-- **Modo oscuro**: ningún color fijo que no tenga su variante en `:root[data-theme='dark']` (y en `[data-style='neobrutalism'][data-theme='dark']`). No usar `@media (prefers-color-scheme)` en componentes: el modo lo decide `src/lib/theme.ts` (el usuario puede forzar claro/oscuro).
+- **Modo oscuro**: ningún color fijo que no tenga su variante en `:root[data-theme='dark']`. No usar `@media (prefers-color-scheme)` en componentes: el modo lo decide `src/lib/theme.ts` (el usuario puede forzar claro/oscuro).
 - **Capas**: un componente de `src/components/` que importe de `@/features/` o `@/lib/supabase` es un hallazgo (rompe la convención de CLAUDE.md).

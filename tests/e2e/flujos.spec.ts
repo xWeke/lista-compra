@@ -132,27 +132,15 @@ test.describe('Apariencia', () => {
     await modo.getByRole('button', { name: 'Oscuro' }).click();
     await expect(html).toHaveAttribute('data-theme', 'dark');
     await expect(html).toHaveCSS('color-scheme', 'dark');
-    await expect(page.locator('body')).toHaveCSS('background-color', 'rgb(3, 7, 18)'); // fondo oscuro de Colorful
+    await expect(page.locator('body')).toHaveCSS('background-color', 'rgb(18, 18, 18)'); // fondo oscuro
     await page.reload();
     await expect(html).toHaveAttribute('data-theme', 'dark');
 
     await modo.getByRole('button', { name: 'Claro' }).click();
     await expect(html).toHaveAttribute('data-theme', 'light');
-    await expect(page.locator('body')).toHaveCSS('background-color', 'rgb(255, 253, 247)'); // crema de Colorful
+    await expect(page.locator('body')).toHaveCSS('background-color', 'rgb(255, 244, 204)'); // amarillo pálido de página
 
     await modo.getByRole('button', { name: 'Automático' }).click();
     await expect(html).toHaveAttribute('data-theme', sistema);
-  });
-});
-
-test.describe('Estilo visual (temporal, mientras se elige)', () => {
-  test('el selector cambia el estilo y se recuerda al recargar', async ({ app, page }) => {
-    await app.login();
-    const html = page.locator('html');
-    await expect(html).toHaveAttribute('data-style', 'colorful');
-    await page.getByRole('group', { name: 'Estilo visual' }).getByRole('button', { name: 'Neobrutalism' }).click();
-    await expect(html).toHaveAttribute('data-style', 'neobrutalism');
-    await page.reload();
-    await expect(html).toHaveAttribute('data-style', 'neobrutalism');
   });
 });

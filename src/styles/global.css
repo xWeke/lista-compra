@@ -1,44 +1,49 @@
 /* Estilos globales y TEMA. Los colores y medidas se usan siempre vía variables: var(--color-text)…
-   Estilo por defecto "Colorful" (el alternativo, Neobrutalism, está en theme-neobrutalism.css) (typeui.sh): crema + verde con sombras sólidas desplazadas y titulares en Luckiest Guy.
-   Valores tomados de la demo real (claro y oscuro) y ajustados para cumplir contraste WCAG AA. */
+   Estilo "Neobrutalism" (typeui.sh): bordes negros gruesos, sombras sólidas, esquinas rectas, amarillo de acento
+   y letra Darker Grotesque. Claro: valores de la demo real. Oscuro: diseño propio (la demo no lo tiene) con las
+   convenciones del estilo: fondo casi negro, bordes claros, sombra amarilla y botones amarillos.
+   Contraste de todas las combinaciones verificado (WCAG AA). */
 
 :root {
   color-scheme: light; /* controles nativos (scroll, inputs) en claro; en oscuro lo cambia el bloque de abajo */
 
   /* Fondos */
-  --color-bg: #fffdf7; /* crema: página, cabecera, tarjetas */
-  --color-surface: #fffdf7;
-  --color-surface-alt: #fef5e4; /* controles: inputs, chips, botones secundarios */
+  --color-bg: #fff4cc; /* amarillo pálido de página */
+  --color-surface: #fffef5; /* tarjetas */
+  --color-surface-alt: #fffef5; /* controles: inputs, chips, botones secundarios */
+  --color-header-bg: #fff066; /* barra superior amarilla */
 
   /* Texto */
-  --color-text: #1a1a1a;
-  --color-text-muted: #636a76;
+  --color-text: #141414;
+  --color-text-muted: #4f4a3c;
 
   /* Bordes */
-  --color-border: #d4c4aa; /* tarjetas y separadores */
-  --color-border-strong: #c8b898; /* controles */
+  --color-border: #000000; /* tarjetas y separadores */
+  --color-border-strong: #000000; /* controles */
 
-  /* Verde: relleno de botones (con texto blanco) y acento (textos, iconos, foco) */
-  --color-primary: #1f7b45;
-  --color-primary-border: #18633a;
-  --color-primary-text: #ffffff;
-  --color-accent: #1f7b45;
+  /* Amarillo: relleno de botones (con texto negro). Acento (textos, iconos, foco): marrón oscuro,
+     porque el amarillo no se lee como texto sobre crema */
+  --color-primary: #ffe600;
+  --color-primary-border: #000000;
+  --color-primary-text: #000000;
+  --color-accent: #6b5600;
 
   /* Elemento seleccionado (chip activo) */
-  --color-selected-bg: #edfbf2;
-  --color-selected-border: #a3e4b8;
-  --color-selected-text: #18633a;
+  --color-selected-bg: #ffe600;
+  --color-selected-border: #000000;
+  --color-selected-text: #000000;
 
   /* Sombra sólida desplazada, seña del estilo */
-  --color-shadow: #1d6e3d;
-  --shadow-hard: 4px 4px 0 var(--color-shadow);
-  --shadow-hard-sm: 3px 3px 0 var(--color-shadow);
+  --color-shadow: #000000;
+  --shadow-hard: 5px 5px 0 var(--color-shadow);
+  --shadow-hard-sm: 4px 4px 0 var(--color-shadow);
   --shadow-pressed: 1px 1px 0 var(--color-shadow);
+  --shadow-input: 2px 2px 0 var(--color-shadow);
 
-  --color-danger: #c70036;
-  --color-checked: #8f8a84; /* productos comprados: atenuados pero legibles */
-  --color-on-checked: #ffffff; /* el ✓ sobre el círculo de "comprado" */
-  --color-backdrop: rgb(26 26 26 / 0.45);
+  --color-danger: #b0003a;
+  --color-checked: #77705d; /* productos comprados: atenuados pero legibles */
+  --color-on-checked: #fffef5; /* el ✓ sobre la casilla de "comprado" */
+  --color-backdrop: rgb(0 0 0 / 0.5);
 
   --space-xs: 4px;
   --space-sm: 8px;
@@ -46,33 +51,31 @@
   --space-lg: 16px;
   --space-xl: 24px;
 
-  --radius-sm: 8px;
-  --radius-md: 12px;
-  --radius-lg: 16px;
-  --radius-pill: 999px;
-  --radius-check: 50%; /* círculo de "comprado" */
-  --color-check: var(--color-accent); /* borde del círculo sin marcar */
+  /* Esquinas rectas y bordes gruesos */
+  --radius-sm: 0;
+  --radius-md: 0;
+  --radius-lg: 0;
+  --radius-pill: 0;
+  --radius-check: 0; /* casilla cuadrada de "comprado" */
+  --color-check: #000000; /* borde de la casilla sin marcar */
+  --border-card: 3px; /* tarjetas y filas */
+  --border-control: 3px; /* inputs, botones, chips, cabecera */
 
-  /* Estructura (lo que cambia entre estilos además del color) */
-  --border-card: 1px; /* tarjetas y filas */
-  --border-control: 2px; /* inputs, botones, chips, cabecera */
-  --shadow-input: none;
-  --color-header-bg: var(--color-bg);
+  /* Tipografía: Darker Grotesque (estrecha y de ojo pequeño, por eso los tamaños son algo mayores);
+     títulos en la misma letra, en negrita 900 y mayúsculas (clase global .display) */
+  --font-body: 'Darker Grotesque Variable', system-ui, -apple-system, 'Segoe UI', Roboto, sans-serif;
+  --font-display: 'Darker Grotesque Variable', system-ui, sans-serif;
+  --display-weight: 900;
+  --display-spacing: 0.01em;
+  --display-offset: 0; /* ajuste óptico vertical del título de la cabecera */
+  --weight-name: 700; /* nombres de producto */
+  --weight-button: 800;
 
-  /* Tipografía: Inter para leer; Luckiest Guy (mayúsculas) solo para títulos */
-  --font-body: 'Inter Variable', system-ui, -apple-system, 'Segoe UI', Roboto, sans-serif;
-  --font-display: 'Luckiest Guy', 'Inter Variable', system-ui, sans-serif;
-  --display-weight: 400; /* Luckiest Guy solo tiene un grosor */
-  --display-spacing: 0.02em;
-  --display-offset: 3px; /* Luckiest Guy asienta bajo: lo centra ópticamente en la cabecera */
-  --weight-name: 500; /* nombres de producto */
-  --weight-button: 600;
-
-  --font-sm: 13px;
-  --font-md: 16px; /* 16px mínimo en inputs: si es menor, Safari en iPhone hace zoom al escribir */
-  --font-lg: 18px;
-  --font-xl: 24px;
-  --font-title: 22px; /* título de página en Luckiest Guy */
+  --font-sm: 15px;
+  --font-md: 18px; /* ≥ 16px en inputs: si es menor, Safari en iPhone hace zoom al escribir */
+  --font-lg: 20px;
+  --font-xl: 26px;
+  --font-title: 26px; /* título de página */
   --font-icon: 30px; /* símbolos grandes, p. ej. la flecha "‹" de volver */
 
   --max-width: 720px;
@@ -91,25 +94,33 @@
    en "Automático", si el sistema está en oscuro). */
 :root[data-theme='dark'] {
   color-scheme: dark;
-  --color-bg: #030712;
-  --color-surface: #101828;
-  --color-surface-alt: #1e2939;
-  --color-text: #f3f4f6;
-  --color-text-muted: #9ca3af;
-  --color-border: #1f2937;
-  --color-border-strong: #374151;
-  --color-primary: #1f7b45; /* mismo relleno que en claro: el verde claro de la demo no da contraste con texto blanco */
-  --color-primary-border: #2a9d58;
-  --color-primary-text: #ffffff;
-  --color-accent: #4cc973;
-  --color-selected-bg: #0c2f18;
-  --color-selected-border: #144d28;
-  --color-selected-text: #a3e4b8;
-  --color-shadow: #1d6e3d;
-  --color-danger: #ff6b81; /* el rojo de la demo no se lee sobre fondo oscuro */
-  --color-checked: #6b7280;
-  --color-on-checked: #f3f4f6;
-  --color-backdrop: rgb(0 0 0 / 0.6);
+  --color-bg: #121212;
+  --color-surface: #1c1c1c;
+  --color-surface-alt: #262626;
+  --color-header-bg: #1c1c1c;
+
+  --color-text: #fffef5;
+  --color-text-muted: #c9c3ae;
+
+  --color-border: #e8e2cc;
+  --color-border-strong: #e8e2cc;
+
+  --color-primary: #ffe600;
+  --color-primary-border: #fffef5;
+  --color-primary-text: #000000;
+  --color-accent: #ffe600;
+  --color-check: #ffe600;
+
+  --color-selected-bg: #ffe600;
+  --color-selected-border: #fffef5;
+  --color-selected-text: #000000;
+
+  --color-shadow: #ffe600; /* sombra amarilla sobre negro */
+
+  --color-danger: #ff6b9d;
+  --color-checked: #8f897a;
+  --color-on-checked: #121212;
+  --color-backdrop: rgb(0 0 0 / 0.7);
 }
 
 *,
@@ -173,7 +184,7 @@ button:focus-visible {
   outline-offset: 2px;
 }
 
-/* Titulares del estilo: Luckiest Guy en mayúsculas (solo títulos; el texto usa Inter) */
+/* Titulares del estilo: Darker Grotesque en negrita 900 y mayúsculas (solo títulos) */
 .display {
   font-family: var(--font-display);
   font-weight: var(--display-weight);

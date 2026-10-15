@@ -11,15 +11,12 @@ El usuario es administrador de sistemas (domina BD e infraestructura, menos fron
 - **CSS Modules** (`Componente.module.css`) + variables CSS de tema en `src/styles/global.css`. Claro/oscuro: el usuario elige
   Automático/Claro/Oscuro (Mis listas → Apariencia); `src/lib/theme.ts` pone `<html data-theme>` y el CSS usa `:root[data-theme='dark']`
   (nunca `@media (prefers-color-scheme)` en componentes).
-- **Estilo visual "Colorful"** (de typeui.sh, adaptado): fondo crema / azul noche, verde como acento, tarjetas y botones con
-  **sombra sólida desplazada** (`--shadow-hard*`), titulares en **Luckiest Guy** en mayúsculas (clase global `display`,
-  en módulos `composes: display from global`) y texto en **Inter**. Fuentes empaquetadas con `@fontsource` (sin Google Fonts).
-  Luckiest Guy solo para títulos, nunca para texto, botones ni nombres de producto. Contraste de la paleta verificado (WCAG AA).
-- **[TEMPORAL] Segundo estilo en prueba: "Neobrutalism"** (`src/styles/theme-neobrutalism.css`, fuente Darker Grotesque):
-  solo redefine variables bajo `<html data-style="neobrutalism">`. Se elige con el selector "Estilo (prueba)" de Mis listas
-  o `?estilo=neobrutalism` (se recuerda en el navegador; ver `src/lib/style-choice.ts`). Al elegir uno: borrar `style-choice.ts`,
-  el selector de `ListsPage`, el import y el CSS del estilo descartado y su paquete `@fontsource`; si gana Neobrutalism,
-  mover sus valores a `global.css`. Todo lo que difiere entre estilos debe ser variable (bordes, radios, fuentes, pesos…).
+- **Estilo visual "Neobrutalism"** (de typeui.sh, elegido por el usuario frente a "Colorful", que se descartó):
+  bordes negros de 3px (claros en oscuro), **sombras sólidas desplazadas** (`--shadow-hard*`; amarillas en oscuro),
+  **esquinas rectas** (radios a 0), cabecera y botón principal **amarillos** con texto negro, casillas cuadradas.
+  Letra **Darker Grotesque** (`@fontsource-variable/darker-grotesque`, empaquetada, sin Google Fonts) también para títulos,
+  en negrita 900 y mayúsculas (clase global `display`; en módulos `composes: display from global`). Es estrecha y de ojo
+  pequeño: los tamaños de `--font-*` son algo mayores de lo habitual. Contraste de la paleta verificado (WCAG AA).
 - **Supabase**: Postgres + Auth (email/contraseña, registro público desactivado) + Realtime. Seguridad con **RLS**.
 - **TanStack Query** para caché; Realtime solo *invalida* queries (no fusiona eventos a mano).
 - **vite-plugin-pwa**: manifest + service worker (`registerType: 'autoUpdate'`). Iconos en `public/` generados desde `public/icon.svg`.

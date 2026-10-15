@@ -14,7 +14,6 @@ import { useListMutations, useLists } from '@/features/lists/hooks';
 import { useAuth } from '@/lib/auth';
 import { confirm, notifyError } from '@/lib/confirm';
 import { plural } from '@/lib/format';
-import { STYLES, applyStyle, getStyle, type StyleName } from '@/lib/style-choice';
 import { THEME_OPTIONS, applyTheme, getThemeChoice, type ThemeChoice } from '@/lib/theme';
 
 import styles from './ListsPage.module.css';
@@ -29,7 +28,6 @@ export function ListsPage() {
   const lists = useLists(householdId);
   const mutations = useListMutations(householdId ?? '');
   const [prompt, setPrompt] = useState<PromptState>(null);
-  const [style, setStyle] = useState<StyleName>(getStyle);
   const [theme, setTheme] = useState<ThemeChoice>(getThemeChoice);
 
   const actions = (
@@ -120,17 +118,6 @@ export function ListsPage() {
           onChange={(t) => {
             applyTheme(t);
             setTheme(t);
-          }}
-        />
-        {/* TEMPORAL: selector para comparar estilos. Borrar al elegir uno (ver src/lib/style-choice.ts). */}
-        <span className={styles.settingsLabel}>Estilo (prueba)</span>
-        <ChipSelect
-          label="Estilo visual"
-          options={(Object.keys(STYLES) as StyleName[]).map((s) => ({ value: s, label: STYLES[s].label }))}
-          value={style}
-          onChange={(s) => {
-            applyStyle(s);
-            setStyle(s);
           }}
         />
       </section>

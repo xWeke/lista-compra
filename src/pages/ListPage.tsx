@@ -131,7 +131,7 @@ export function ListPage() {
           <section key={section.key}>
             <div className={styles.sectionHeader}>
               <h2 className={styles.sectionTitle}>{section.title}</h2>
-              {/* "Limpiar" junto a los comprados (en la cabecera no cabe con títulos en Luckiest Guy) */}
+              {/* "Limpiar" junto a los comprados: en la cabecera no cabe junto a títulos largos */}
               {section.key === 'checked' && (
                 <Button variant="ghost" compact onClick={clearChecked} aria-label="Limpiar comprados">
                   Limpiar
