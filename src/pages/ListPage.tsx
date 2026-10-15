@@ -4,6 +4,7 @@ import { useParams } from 'react-router';
 
 import { AddItemBar, type Suggestion } from '@/components/AddItemBar';
 import { Button } from '@/components/Button';
+import { CategoryPrompt } from '@/components/CategoryPrompt';
 import { EmptyState } from '@/components/EmptyState';
 import { ItemEditModal, type ItemDraft } from '@/components/ItemEditModal';
 import { ItemRow } from '@/components/ItemRow';
@@ -47,6 +48,8 @@ export function ListPage() {
   const products = useProducts(householdId);
   const mutations = useItemMutations(id, householdId ?? '');
   const [editing, setEditing] = useState<ListItem | null>(null);
+  // Producto recién creado sin categoría: se pregunta debajo de la barra de añadir.
+  const [askCategory, setAskCategory] = useState<{ productId: string; name: string } | null>(null);
 
   const sections = useMemo(() => buildSections(items.data ?? [], categories.data ?? []), [items.data, categories.data]);
   const suggestions = useMemo<Suggestion[]>(
@@ -68,6 +71,27 @@ export function ListPage() {
     ],
     [categories.data],
   );
+  const promptOptions = useMemo(
+    () => categoryOptions.filter((o): o is { value: string; label: string } => o.value !== null),
+    [categoryOptions],
+  );
+
+  const addProduct = (name: string) => {
+    mutations.add.mutate(
+      { name },
+      {
+        onSuccess: ({ product, created }) => {
+          if (created && !product.default_category_id) setAskCategory({ productId: product.id, name: product.name });
+        },
+      },
+    );
+  };
+
+  const pickCategory = (categoryId: string) => {
+    if (!askCategory) return;
+    mutations.updateProduct.mutate({ productId: askCategory.productId, changes: { default_category_id: categoryId } });
+    setAskCategory(null);
+  };
 
   const draft: ItemDraft | null = editing && {
     name: editing.product.name,
@@ -116,9 +140,19 @@ export function ListPage() {
       <AddItemBar
         suggestions={suggestions}
         normalize={normalizeName}
-        onAdd={(name) => mutations.add.mutate({ name })}
+        onAdd={addProduct}
         adding={mutations.add.isPending}
       />
+
+      {askCategory && promptOptions.length > 0 && (
+        <CategoryPrompt
+          key={askCategory.productId}
+          productName={askCategory.name}
+          categories={promptOptions}
+          onPick={pickCategory}
+          onDismiss={() => setAskCategory(null)}
+        />
+      )}
 
       {items.isLoading ? (
         <EmptyState loading />

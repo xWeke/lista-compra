@@ -37,8 +37,12 @@ export async function fetchProducts(householdId: string): Promise<Product[]> {
   return data;
 }
 
-/** Busca el producto por nombre normalizado y, si no existe, lo crea en el catálogo. */
-async function findOrCreateProduct(householdId: string, name: string, categoryId: string | null): Promise<Product> {
+/** Busca el producto por nombre normalizado y, si no existe, lo crea en el catálogo. `created` = lo acaba de crear. */
+async function findOrCreateProduct(
+  householdId: string,
+  name: string,
+  categoryId: string | null,
+): Promise<{ product: Product; created: boolean }> {
   const find = () =>
     supabase
       .from('products')
@@ -49,19 +53,19 @@ async function findOrCreateProduct(householdId: string, name: string, categoryId
 
   const existing = await find();
   if (existing.error) throw existing.error;
-  if (existing.data) return existing.data;
+  if (existing.data) return { product: existing.data, created: false };
 
   const created = await supabase
     .from('products')
     .insert({ household_id: householdId, name: name.trim(), default_category_id: categoryId })
     .select()
     .single();
-  if (!created.error) return created.data;
+  if (!created.error) return { product: created.data, created: true };
 
   // 23505 = clave duplicada: lo ha creado el otro usuario a la vez. Lo leemos.
   if (created.error.code === '23505') {
     const again = await find();
-    if (again.data) return again.data;
+    if (again.data) return { product: again.data, created: false };
   }
   throw created.error;
 }
@@ -70,14 +74,15 @@ async function findOrCreateProduct(householdId: string, name: string, categoryId
  * Añade un producto a la lista. Si ya estaba (sin archivar):
  *  - marcado como comprado → se desmarca;
  *  - pendiente → se suma 1 a la cantidad.
+ * Devuelve el producto y si es nuevo en el catálogo (para preguntar su categoría).
  */
 export async function addItem(params: {
   listId: string;
   householdId: string;
   name: string;
   categoryId?: string | null;
-}) {
-  const product = await findOrCreateProduct(params.householdId, params.name, params.categoryId ?? null);
+}): Promise<AddItemResult> {
+  const { product, created } = await findOrCreateProduct(params.householdId, params.name, params.categoryId ?? null);
 
   const { data: current, error: findError } = await supabase
     .from('list_items')
@@ -92,14 +97,17 @@ export async function addItem(params: {
     const changes = current.is_checked ? { is_checked: false } : { quantity: Number(current.quantity) + 1 };
     const { error } = await supabase.from('list_items').update(changes).eq('id', current.id);
     if (error) throw error;
-    return;
+    return { product, created };
   }
 
   const { error } = await supabase
     .from('list_items')
     .insert({ list_id: params.listId, product_id: product.id, unit: product.default_unit });
   if (error) throw error;
+  return { product, created };
 }
+
+export type AddItemResult = { product: Product; created: boolean };
 
 export type ItemChanges = Partial<Pick<ListItem, 'quantity' | 'unit' | 'note' | 'is_checked' | 'category_id'>>;
 

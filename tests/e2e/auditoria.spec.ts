@@ -58,6 +58,11 @@ test.describe('Auditoría', () => {
   test('lista y panel de edición', async ({ app, page }) => {
     await app.openList();
     await expectClean(page, 'Lista');
+    // Pregunta de categoría de un producto nuevo
+    await page.getByLabel('Producto a añadir').fill('Producto de prueba');
+    await page.getByLabel('Producto a añadir').press('Enter');
+    await expect(page.getByRole('region', { name: /Categoría de/ })).toBeVisible();
+    await expectClean(page, 'Pregunta de categoría');
     await page.getByRole('button', { name: 'Editar Leche entera' }).click();
     const panel = page.getByRole('dialog');
     await expect(panel).toBeVisible();

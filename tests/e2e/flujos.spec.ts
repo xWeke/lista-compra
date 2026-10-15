@@ -65,11 +65,45 @@ test.describe('Lista de la compra', () => {
     await expect(page.getByLabel('Producto a añadir')).toBeFocused();
   });
 
-  test('el autocompletado suma uno a un producto que ya está en la lista', async ({ app, page }) => {
+  test('un producto nuevo pregunta su categoría y la guarda en el catálogo', async ({ app, page, db }) => {
+    await app.openList();
+    await page.getByLabel('Producto a añadir').fill('Tomates');
+    await page.getByLabel('Producto a añadir').press('Enter');
+
+    const pregunta = page.getByRole('region', { name: 'Categoría de Tomates' });
+    await expect(pregunta).toBeVisible();
+    // La pregunta no roba el foco: se puede seguir escribiendo el siguiente producto.
+    await expect(page.getByLabel('Producto a añadir')).toBeFocused();
+
+    await pregunta.getByRole('button', { name: /Fruta y verdura/ }).click();
+    await expect(pregunta).toBeHidden();
+    // Ahora aparece en la sección de su categoría…
+    const seccion = page.locator('section').filter({ has: page.getByRole('heading', { name: /Fruta y verdura/ }) });
+    await expect(seccion.getByRole('checkbox', { name: /Tomates/ })).toBeVisible();
+    // …y queda recordada en el catálogo para la próxima vez.
+    await expect.poll(() => db.products.find((p) => p.name === 'Tomates')?.default_category_id).toBe('cat-fruta');
+  });
+
+  test('"Ahora no" deja el producto nuevo en Sin categoría', async ({ app, page }) => {
+    await app.openList();
+    await page.getByLabel('Producto a añadir').fill('Servilletas');
+    await page.getByLabel('Producto a añadir').press('Enter');
+    const pregunta = page.getByRole('region', { name: 'Categoría de Servilletas' });
+    await pregunta.getByRole('button', { name: 'Ahora no' }).click();
+    await expect(pregunta).toBeHidden();
+    const sinCategoria = page.locator('section').filter({ has: page.getByRole('heading', { name: 'Sin categoría' }) });
+    await expect(sinCategoria.getByRole('checkbox', { name: /Servilletas/ })).toBeVisible();
+  });
+
+  test('el autocompletado suma uno a un producto que ya está en la lista (sin preguntar categoría)', async ({
+    app,
+    page,
+  }) => {
     await app.openList();
     await page.getByLabel('Producto a añadir').fill('hue');
     await page.getByRole('button', { name: 'Huevos', exact: true }).click();
     await expect(page.getByRole('checkbox', { name: /Huevos/ })).toContainText('2 ud');
+    await expect(page.getByRole('region', { name: /Categoría de/ })).toHaveCount(0);
   });
 
   test('editar cantidad y nota desde el panel (sin abrir el teclado)', async ({ app, page, db }) => {
