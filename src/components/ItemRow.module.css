@@ -71,6 +71,41 @@
   font-style: italic;
 }
 
+/* − cantidad +: botones del tamaño mínimo cómodo y la cifra en medio, juntos en una "pastilla" */
+.stepper {
+  flex: none;
+  display: flex;
+  align-items: center;
+  border: var(--border-control) solid var(--color-border-strong);
+  border-radius: var(--radius-lg);
+  background: var(--color-surface-alt);
+}
+
+.stepButton {
+  min-width: 40px;
+  min-height: 40px;
+  color: var(--color-text);
+  /* La fuente de la app pinta − y + muy finos: estos dos, con la del sistema, más grandes y gruesos */
+  font-family: system-ui, -apple-system, sans-serif;
+  font-size: var(--font-lg);
+  font-weight: 700;
+  touch-action: manipulation; /* tocar rápido dos veces no hace zoom */
+}
+
+.stepValue {
+  min-width: 1.6em;
+  text-align: center;
+  font-weight: 600;
+  font-variant-numeric: tabular-nums;
+  white-space: nowrap;
+}
+
+.stepUnit {
+  color: var(--color-text-muted);
+  font-size: var(--font-sm);
+  font-weight: 400;
+}
+
 /* Modo Organizar: el texto ya no es un botón (tocarlo no marca nada) */
 .info {
   flex: 1;

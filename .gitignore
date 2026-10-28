@@ -21,6 +21,8 @@ supabase/.temp/
 supabase/.branches/
 # Scripts con datos personales (emails): copias locales de las plantillas
 supabase/*.local.sql
+# Importaciones de catálogos (npm run import:dia): son datos de terceros y caducan
+supabase/imports/
 
 # Logs
 logs

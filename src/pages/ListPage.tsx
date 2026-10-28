@@ -297,6 +297,7 @@ export function ListPage() {
                   byline={bylineFor(item)}
                   onToggle={() => mutations.update.mutate({ id: item.id, changes: { is_checked: !item.is_checked } })}
                   onEdit={() => setEditing(item)}
+                  onQuantityChange={(quantity) => mutations.update.mutate({ id: item.id, changes: { quantity } })}
                   organize={
                     organizing
                       ? {

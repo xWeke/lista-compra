@@ -89,7 +89,18 @@ function PickerContent({
                 aria-current={r.id === currentId || undefined}
                 onClick={() => onPick(r.id)}>
                 {r.imageUrl ? (
-                  <img className={styles.image} src={r.imageUrl} alt="" loading="lazy" width={48} height={48} />
+                  // Si la web del súper no deja cargar la foto, queda el hueco vacío en vez del icono de imagen rota
+                  <img
+                    className={styles.image}
+                    src={r.imageUrl}
+                    alt=""
+                    loading="lazy"
+                    width={48}
+                    height={48}
+                    onError={(e) => {
+                      e.currentTarget.style.visibility = 'hidden';
+                    }}
+                  />
                 ) : (
                   <span className={styles.image} />
                 )}

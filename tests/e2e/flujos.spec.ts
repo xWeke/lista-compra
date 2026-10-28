@@ -125,6 +125,27 @@ test.describe('Lista de la compra', () => {
     await expect.poll(() => db.list_items.find((i) => i.id === 'i-leche')?.quantity).toBe(7);
   });
 
+  test('− y + en la fila cambian la cantidad y guardan una sola vez al dejar de tocar', async ({ app, page, db }) => {
+    await app.openList();
+    const guardados: string[] = [];
+    page.on('request', (r) => {
+      if (r.method() === 'PATCH' && r.url().includes('/list_items')) guardados.push(r.postData() ?? '');
+    });
+    const cantidad = page.getByRole('group', { name: 'Cantidad de Leche entera' });
+    for (let i = 0; i < 3; i++) await cantidad.getByRole('button', { name: 'Más Leche entera' }).click();
+    await cantidad.getByRole('button', { name: 'Menos Leche entera' }).click();
+    await expect(cantidad).toContainText('8'); // 6 + 3 − 1, al momento
+    await expect.poll(() => db.list_items.find((i) => i.id === 'i-leche')?.quantity).toBe(8);
+    expect(guardados).toHaveLength(1);
+    // Comprado: sin − / + (ya no hace falta cambiar cuánto)
+    await expect(page.getByRole('group', { name: 'Cantidad de Lavavajillas' })).toHaveCount(0);
+    // En 1 no se puede restar más (para quitarlo está el ✎)
+    await expect(page.getByRole('button', { name: 'Menos Huevos' })).toBeDisabled();
+    // Plátanos van por kg: de 0,1 en 0,1
+    await page.getByRole('button', { name: 'Más Plátanos' }).click();
+    await expect(page.getByRole('group', { name: 'Cantidad de Plátanos' })).toContainText('1,6 kg');
+  });
+
   test('borrar un producto pide confirmación y lo quita', async ({ app, page, db }) => {
     await app.openList();
     page.once('dialog', (d) => d.accept());

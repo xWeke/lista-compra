@@ -86,6 +86,9 @@ Desde otra red, `npm run db:push` normal. Proyecto: `wnpzgrnffjbmcpwxasgh` (eu-c
   (`?start=0&sz=1000`; las saca del sitemap de categorías). Respeta su robots.txt: nada de buscador, `Search-ShowAjax` ni
   `ver-todo`. Su web es lenta (Frescos ~90 s): va **por partes** (`store_sync_parts`), cada ejecución empieza partes
   durante 45 s; pg_cron cada 10 min de madrugada; una parte de < 20 h no se repite. Producto no visto en 3 días = no disponible.
+- **Dia** (bloquea el acceso automático): no hay volcado diario ni se automatiza saltarse su anti-bot. Solo se importa un
+  CSV que trae el usuario: `npm run import:dia [-- ruta.csv]` (por defecto `~/Downloads/dia_productos.csv`) genera
+  `supabase/imports/dia-parte-N.sql` (ignorado por git) para pegar en orden en el SQL Editor. Precios = foto del día del CSV.
 - Súpers que **no** se pueden volcar (bloquean el acceso automático; no saltárselo): Alcampo, Dia, Carrefour,
   El Corte Inglés, Hipercor. Lidl no vende comida online. Posibles: Eroski (HTML), Consum (API JSON con EAN).
 - Desplegar (funciona desde la red del trabajo, va por HTTPS): `npx supabase functions deploy <nombre> --use-api`.
