@@ -1,12 +1,14 @@
 <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 512 512">
+  <!-- Sin marco: iOS y Android ya recortan el icono con esquinas redondeadas y un borde quedaría cortado -->
   <rect width="512" height="512" fill="#ffe600"/>
-  <rect x="14" y="14" width="484" height="484" fill="none" stroke="#000" stroke-width="28"/>
-  <g fill="none" stroke="#000" stroke-width="32" stroke-linecap="square" stroke-linejoin="miter">
-    <path d="M92 132h56l40 196h196l36-140H170"/>
+  <g transform="translate(0 -8)">
+    <g fill="none" stroke="#000" stroke-width="32" stroke-linecap="square" stroke-linejoin="miter">
+      <path d="M92 132h56l40 196h196l36-140H170"/>
+    </g>
+    <g fill="#000">
+      <rect x="186" y="362" width="52" height="52"/>
+      <rect x="330" y="362" width="52" height="52"/>
+    </g>
+    <path d="M236 244l32 32 64-72" fill="none" stroke="#000" stroke-width="28" stroke-linecap="square"/>
   </g>
-  <g fill="#000">
-    <rect x="186" y="362" width="52" height="52"/>
-    <rect x="330" y="362" width="52" height="52"/>
-  </g>
-  <path d="M236 244l32 32 64-72" fill="none" stroke="#000" stroke-width="28" stroke-linecap="square"/>
 </svg>
