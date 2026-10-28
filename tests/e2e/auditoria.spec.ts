@@ -87,6 +87,20 @@ test.describe('Auditoría', () => {
     await expectClean(page, 'Lista en modo Organizar');
   });
 
+  test('revisión de una foto', async ({ app, page }) => {
+    await app.openList();
+    await page.locator('input[type="file"]').setInputFiles({
+      name: 'lista.png',
+      mimeType: 'image/png',
+      buffer: Buffer.from(
+        'iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCAYAAAAfFcSJAAAADUlEQVR42mP8z8BQDwAEhQGAhKmMIQAAAABJRU5ErkJggg==',
+        'base64',
+      ),
+    });
+    await expect(page.getByRole('heading', { name: 'Lista leída' })).toBeVisible();
+    await expectClean(page, 'Revisión de foto');
+  });
+
   test('categorías', async ({ app, page }) => {
     await app.login();
     await page.getByRole('link', { name: 'Categorías' }).click();

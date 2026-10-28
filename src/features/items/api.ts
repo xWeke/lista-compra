@@ -71,9 +71,10 @@ async function findOrCreateProduct(
 }
 
 /**
- * Añade un producto a la lista. Si ya estaba (sin archivar):
- *  - marcado como comprado → se desmarca;
- *  - pendiente → se suma 1 a la cantidad.
+ * Añade un producto a la lista (`quantity`, por defecto 1). Si ya estaba (sin archivar):
+ *  - marcado como comprado → se desmarca (y, si se indica cantidad, se pone esa);
+ *  - pendiente → se suma la cantidad.
+ * `categoryId` solo se usa si el producto es nuevo en el catálogo.
  * Devuelve el producto y si es nuevo en el catálogo (para preguntar su categoría).
  */
 export async function addItem(params: {
@@ -81,6 +82,8 @@ export async function addItem(params: {
   householdId: string;
   name: string;
   categoryId?: string | null;
+  quantity?: number;
+  unit?: string;
 }): Promise<AddItemResult> {
   const { product, created } = await findOrCreateProduct(params.householdId, params.name, params.categoryId ?? null);
 
@@ -94,15 +97,22 @@ export async function addItem(params: {
   if (findError) throw findError;
 
   if (current) {
-    const changes = current.is_checked ? { is_checked: false } : { quantity: Number(current.quantity) + 1 };
+    const add = params.quantity ?? 1;
+    const changes = current.is_checked
+      ? { is_checked: false, ...(params.quantity !== undefined && { quantity: add, unit: params.unit }) }
+      : { quantity: Number(current.quantity) + add };
     const { error } = await supabase.from('list_items').update(changes).eq('id', current.id);
     if (error) throw error;
     return { product, created };
   }
 
-  const { error } = await supabase
-    .from('list_items')
-    .insert({ list_id: params.listId, product_id: product.id, unit: product.default_unit });
+  const { error } = await supabase.from('list_items').insert({
+    list_id: params.listId,
+    product_id: product.id,
+    quantity: params.quantity ?? 1,
+    // La unidad leída ("1 kg") manda; si no dice nada ("ud"), la habitual del producto.
+    unit: params.unit && params.unit !== 'ud' ? params.unit : product.default_unit,
+  });
   if (error) throw error;
   return { product, created };
 }
@@ -142,4 +152,11 @@ export async function updateProduct(
     if (error.code === '23505') throw new Error('Ya existe otro producto con ese nombre.');
     throw error;
   }
+}
+
+export type NewItem = { name: string; quantity: number; unit: string; categoryId: string | null };
+
+/** Añade varios productos (p. ej. leídos de una foto), uno detrás de otro: si dos se llaman igual, se suman. */
+export async function addItems(listId: string, householdId: string, items: NewItem[]) {
+  for (const item of items) await addItem({ listId, householdId, ...item });
 }

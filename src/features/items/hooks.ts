@@ -8,6 +8,7 @@ import { useRealtimeInvalidation } from '@/lib/realtime';
 
 import {
   addItem,
+  addItems,
   archiveCheckedItems,
   deleteItem,
   fetchItems,
@@ -16,6 +17,7 @@ import {
   updateProduct,
   type ItemChanges,
   type ListItem,
+  type NewItem,
 } from './api';
 
 export function useListItems(listId: string, householdId: string | undefined) {
@@ -67,6 +69,14 @@ export function useItemMutations(listId: string, householdId: string) {
         addItem({ listId, householdId, name, categoryId }),
       onSuccess: () => {
         refresh();
+        queryClient.invalidateQueries({ queryKey: queryKeys.products(householdId) });
+      },
+      onError: notifyError,
+    }),
+    addMany: useMutation({
+      mutationFn: (items: NewItem[]) => addItems(listId, householdId, items),
+      onSettled: () => {
+        refresh(); // también si falla a medias: se ve lo que sí entró
         queryClient.invalidateQueries({ queryKey: queryKeys.products(householdId) });
       },
       onError: notifyError,

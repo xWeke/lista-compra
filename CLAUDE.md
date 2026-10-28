@@ -68,6 +68,17 @@ Procedimiento para aplicar una migración desde aquí:
 3. `npm run db:types` y `npm run typecheck`.
 Desde otra red, `npm run db:push` normal. Proyecto: `wnpzgrnffjbmcpwxasgh` (eu-central-1). Hogar "Casa" creado (miembros: Adrian y Andrea).
 
+### Edge Functions (Supabase)
+
+- `supabase/functions/scan-list/`: foto de una lista en papel → productos, con **Gemini** (nivel gratuito de Google AI Studio;
+  en ese nivel Google puede usar las fotos para mejorar sus modelos). La app la llama con `supabase.functions.invoke`
+  (`src/features/scan/`), que envía el token de la sesión; la función comprueba usuario y hogar (con RLS) y valida la respuesta de la IA.
+- Secrets en Supabase (Edge Functions → Secrets), **nunca** en el repo ni en `.env`: `GEMINI_API_KEY` (obligatoria),
+  `GEMINI_MODEL` (opcional, por defecto `gemini-3.8-flash`).
+- `verify_jwt = false` en `supabase/config.toml` (la sesión la comprueba el código con `auth.getUser`). CORS: solo la web
+  publicada y localhost (lista `ALLOWED_ORIGINS` en la función).
+- Desplegar (funciona desde la red del trabajo, va por HTTPS): `npx supabase functions deploy scan-list --use-api`.
+
 ### Despliegue (GitHub Pages)
 
 - Repo público `lista-compra` → `https://<usuario>.github.io/lista-compra/`. El prefijo está en `base` de `vite.config.ts`.

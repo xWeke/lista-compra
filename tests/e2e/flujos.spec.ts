@@ -144,19 +144,73 @@ test.describe('Lista de la compra', () => {
 });
 
 test.describe('Quién lo hizo', () => {
-  test('se ve quién añadió o compró cada producto, solo si fue la otra persona', async ({ app, page }) => {
+  test('se ve quién añadió o compró cada producto, también lo propio', async ({ app, page }) => {
     await app.openList();
     // Andrea añadió la leche y compró el lavavajillas.
     await expect(page.getByRole('checkbox', { name: /Leche entera/ })).toContainText('Añadido por Andrea');
     await expect(page.getByRole('checkbox', { name: /Lavavajillas/ })).toContainText('Comprado por Andrea');
-    // Lo añadido por mí no lleva etiqueta.
-    await expect(page.getByRole('checkbox', { name: /Huevos/ })).not.toContainText(' por ');
+    // Lo añadido por mí también lleva etiqueta, con mi nombre.
+    await expect(page.getByRole('checkbox', { name: /Huevos/ })).toContainText('Añadido por Adrian');
 
-    // Si lo marco yo, pasa a Comprados sin etiqueta (y deja de decir "Añadido por").
+    // Si lo marco yo, pasa a Comprados con mi nombre (y deja de decir "Añadido por").
     const leche = page.getByRole('checkbox', { name: /Leche entera/ });
     await leche.click();
     await expect(leche).toHaveAttribute('aria-checked', 'true');
-    await expect(leche).not.toContainText(' por ');
+    await expect(leche).toContainText('Comprado por Adrian');
+    await expect(leche).not.toContainText('Añadido por');
+  });
+});
+
+test.describe('Foto de una lista', () => {
+  // PNG de 1×1 px: la app lo reduce y lo envía; la "lectura" la pone el simulador (scan_result).
+  const foto = {
+    name: 'lista.png',
+    mimeType: 'image/png',
+    buffer: Buffer.from(
+      'iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCAYAAAAfFcSJAAAADUlEQVR42mP8z8BQDwAEhQGAhKmMIQAAAABJRU5ErkJggg==',
+      'base64',
+    ),
+  };
+
+  test('lo leído se revisa (desmarcar, corregir) y se añade de golpe', async ({ app, page, db }) => {
+    await app.openList();
+    // El botón abre el selector de fotos del sistema; en la prueba se le da el fichero directamente.
+    await expect(page.getByRole('button', { name: '📷 Foto' })).toBeVisible();
+    await page.locator('input[type="file"]').setInputFiles(foto);
+
+    const panel = page.getByRole('dialog');
+    await expect(panel.getByRole('heading', { name: 'Lista leída' })).toBeVisible();
+    // Producto conocido: su categoría del catálogo. Nuevo: la que propone la IA, marcado como "nuevo".
+    await expect(panel.getByText('2 ud · 🥛 Lácteos y huevos')).toBeVisible();
+    await expect(panel.getByText('1 kg · 🥦 Fruta y verdura · nuevo')).toBeVisible();
+
+    await panel.getByRole('checkbox', { name: 'Añadir Garabato' }).click();
+    await panel.getByLabel('Nombre del producto 2').fill('Tomates pera');
+    await panel.getByRole('button', { name: 'Añadir 2' }).click();
+    await expect(panel).toBeHidden();
+
+    const fruta = page.locator('section').filter({ has: page.getByRole('heading', { name: /Fruta y verdura/ }) });
+    await expect(fruta.getByRole('checkbox', { name: /Tomates pera/ })).toContainText('1 kg');
+    await expect(page.getByRole('checkbox', { name: /Leche entera/ })).toContainText('8 ud'); // 6 + 2
+    await expect(page.getByRole('checkbox', { name: /Garabato/ })).toHaveCount(0);
+    await expect.poll(() => db.products.find((p) => p.name === 'Tomates pera')?.default_category_id).toBe('cat-fruta');
+  });
+
+  test('si la IA falla, se avisa y no se añade nada', async ({ app, page }) => {
+    await app.openList();
+    await page.route(`${SUPABASE_URL}/functions/v1/scan-list`, (route) =>
+      route.fulfill({
+        status: 429,
+        contentType: 'application/json',
+        body: JSON.stringify({ error: 'Se ha agotado el uso gratuito de la IA por ahora. Prueba más tarde.' }),
+      }),
+    );
+    const aviso = page.waitForEvent('dialog');
+    await page.locator('input[type="file"]').setInputFiles(foto);
+    const dialog = await aviso;
+    expect(dialog.message()).toContain('uso gratuito');
+    await dialog.accept();
+    await expect(page.getByRole('heading', { name: 'Lista leída' })).toHaveCount(0);
   });
 });
 

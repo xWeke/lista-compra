@@ -1,6 +1,7 @@
 // Detalle de lista: añadir productos, agrupados por categoría; comprados al final.
 // Modo Organizar: cada producto muestra un desplegable para cambiarlo de categoría sin abrir el panel.
-import { useMemo, useState } from 'react';
+// 📷 Foto: se lee una lista en papel con IA (Edge Function scan-list) y, tras revisarla, se añade entera.
+import { useMemo, useRef, useState, type ChangeEvent } from 'react';
 import { useParams } from 'react-router';
 
 import { AddItemBar, type Suggestion } from '@/components/AddItemBar';
@@ -10,14 +11,17 @@ import { EmptyState } from '@/components/EmptyState';
 import { ItemEditModal, type ItemDraft } from '@/components/ItemEditModal';
 import { ItemRow } from '@/components/ItemRow';
 import { Page } from '@/components/Page';
+import { ScanReviewModal, type ReviewItem } from '@/components/ScanReviewModal';
 import type { Category } from '@/features/categories/api';
 import { useCategories } from '@/features/categories/hooks';
 import { useHousehold, useMemberNames } from '@/features/household/hooks';
 import { UNITS, itemCategoryId, normalizeName, type ListItem } from '@/features/items/api';
 import { useItemMutations, useListItems, useProducts } from '@/features/items/hooks';
 import { useList } from '@/features/lists/hooks';
-import { useAuth } from '@/lib/auth';
-import { confirm } from '@/lib/confirm';
+import type { ScannedItem } from '@/features/scan/api';
+import { useScanList } from '@/features/scan/hooks';
+import { confirm, notifyError } from '@/lib/confirm';
+import { formatQuantity } from '@/lib/format';
 
 import styles from './ListPage.module.css';
 
@@ -49,12 +53,14 @@ export function ListPage() {
   const categories = useCategories(householdId);
   const products = useProducts(householdId);
   const memberNames = useMemberNames(householdId).data ?? {};
-  const myId = useAuth().session?.user.id;
   const mutations = useItemMutations(id, householdId ?? '');
   const [editing, setEditing] = useState<ListItem | null>(null);
   // Producto recién creado sin categoría: se pregunta debajo de la barra de añadir.
   const [askCategory, setAskCategory] = useState<{ productId: string; name: string } | null>(null);
   const [organizing, setOrganizing] = useState(false);
+  const scan = useScanList();
+  const photoInput = useRef<HTMLInputElement>(null);
+  const [review, setReview] = useState<ReviewItem[] | null>(null);
 
   const sections = useMemo(() => buildSections(items.data ?? [], categories.data ?? []), [items.data, categories.data]);
   const suggestions = useMemo<Suggestion[]>(
@@ -98,11 +104,37 @@ export function ListPage() {
     setAskCategory(null);
   };
 
-  /** "Añadido por …" / "Comprado por …", solo si lo hizo otra persona (lo propio no se etiqueta). */
+  /** "Añadido por …" / "Comprado por …" (también lo propio, con el nombre de cada uno). */
   const bylineFor = (item: ListItem) => {
     const who = item.is_checked ? item.checked_by : item.created_by;
-    if (!who || who === myId || !memberNames[who]) return null;
+    if (!who || !memberNames[who]) return null;
     return `${item.is_checked ? 'Comprado' : 'Añadido'} por ${memberNames[who]}`;
+  };
+
+  /** Lo leído de la foto, listo para revisar. Si el producto ya está en el catálogo, manda su categoría. */
+  const toReview = (scanned: ScannedItem[]): ReviewItem[] => {
+    const catalog = new Map((products.data ?? []).map((p) => [p.name_normalized ?? normalizeName(p.name), p]));
+    const labelOf = (id: string | null) => categoryOptions.find((o) => o.value === id)?.label ?? 'Sin categoría';
+    return scanned.map((it) => {
+      const known = catalog.get(normalizeName(it.name));
+      const categoryId = known ? known.default_category_id : it.category_id;
+      const parts = [`${formatQuantity(it.quantity)} ${it.unit}`, labelOf(categoryId), ...(known ? [] : ['nuevo'])];
+      return { name: it.name, quantity: it.quantity, unit: it.unit, categoryId, detail: parts.join(' · ') };
+    });
+  };
+
+  const onPhoto = (e: ChangeEvent<HTMLInputElement>) => {
+    const file = e.target.files?.[0];
+    e.target.value = ''; // permite elegir la misma foto otra vez
+    if (!file) return;
+    scan.mutate(file, { onSuccess: (scanned) => setReview(toReview(scanned)), onError: notifyError });
+  };
+
+  const addReviewed = (selected: ReviewItem[]) => {
+    setReview(null);
+    mutations.addMany.mutate(
+      selected.map(({ name, quantity, unit, categoryId }) => ({ name, quantity, unit, categoryId })),
+    );
   };
 
   const draft: ItemDraft | null = editing && {
@@ -164,8 +196,24 @@ export function ListPage() {
             adding={mutations.add.isPending}
           />
           {/* Fuera de la cabecera: allí el título largo de la lista se cortaría */}
-          {sections.length > 0 && (
-            <div className={styles.toolbar}>
+          <div className={styles.toolbar}>
+            {/* Selector de fotos del sistema (en el iPhone: "Hacer foto" o "Fototeca"); se abre desde el botón */}
+            <input
+              ref={photoInput}
+              type="file"
+              accept="image/*"
+              hidden
+              aria-label="Foto de una lista"
+              onChange={onPhoto}
+            />
+            <Button
+              variant="ghost"
+              compact
+              loading={scan.isPending || mutations.addMany.isPending}
+              onClick={() => photoInput.current?.click()}>
+              {scan.isPending ? 'Leyendo foto' : mutations.addMany.isPending ? 'Añadiendo' : '📷 Foto'}
+            </Button>
+            {sections.length > 0 && (
               <Button
                 variant="ghost"
                 compact
@@ -175,8 +223,8 @@ export function ListPage() {
                 }}>
                 Organizar
               </Button>
-            </div>
-          )}
+            )}
+          </div>
         </>
       )}
 
@@ -235,6 +283,8 @@ export function ListPage() {
           </section>
         ))
       )}
+
+      <ScanReviewModal items={review} onConfirm={addReviewed} onClose={() => setReview(null)} />
 
       <ItemEditModal
         initial={draft}

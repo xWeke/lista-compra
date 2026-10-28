@@ -1,0 +1,84 @@
+.form {
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-sm);
+}
+
+.title {
+  composes: display from global;
+  font-size: var(--font-lg);
+}
+
+.hint,
+.empty {
+  color: var(--color-text-muted);
+  font-size: var(--font-sm);
+}
+
+.list {
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-sm);
+}
+
+.row {
+  display: flex;
+  align-items: flex-start;
+  gap: var(--space-xs);
+}
+
+/* Desmarcado: atenuado, para ver de un vistazo lo que no se va a añadir */
+.row[data-included='false'] .fields {
+  opacity: 0.5;
+}
+
+.check {
+  flex: none;
+  display: grid;
+  place-items: center;
+  width: var(--tap-size);
+  height: var(--tap-size);
+  padding: 0;
+  border: none;
+  background: transparent;
+  cursor: pointer;
+}
+
+.box {
+  display: grid;
+  place-items: center;
+  width: 26px;
+  height: 26px;
+  border: var(--border-control) solid var(--color-check);
+  border-radius: var(--radius-check);
+  color: var(--color-on-checked);
+  font-size: var(--font-sm);
+  font-weight: 700;
+}
+
+/* Marcada = se añadirá: amarilla como el botón principal (el gris es el de "comprado" en la lista) */
+.row[data-included='true'] .box {
+  border-color: var(--color-border-strong);
+  background: var(--color-primary);
+  color: var(--color-primary-text);
+}
+
+.fields {
+  flex: 1;
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+  min-width: 0;
+}
+
+.detail {
+  color: var(--color-text-muted);
+  font-size: var(--font-sm);
+}
+
+.actions {
+  display: flex;
+  justify-content: flex-end;
+  gap: var(--space-sm);
+  margin-top: var(--space-md);
+}

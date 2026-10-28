@@ -89,7 +89,15 @@ export function createSeed() {
     updated_at: t,
   }));
 
-  return { categories, products, list_items, lists, profiles };
+  /** Lo que "lee" la IA en cualquier foto (Edge Function scan-list): un producto que ya está en la lista,
+   *  uno nuevo con categoría y uno mal leído (para desmarcarlo en la revisión). */
+  const scan_result = [
+    { name: 'Leche entera', quantity: 2, unit: 'ud', category_id: 'cat-lacteos' },
+    { name: 'Tomates', quantity: 1, unit: 'kg', category_id: 'cat-fruta' },
+    { name: 'Garabato', quantity: 1, unit: 'ud', category_id: null },
+  ];
+
+  return { categories, products, list_items, lists, profiles, scan_result };
 }
 
 export type MockDb = ReturnType<typeof createSeed>;
@@ -199,6 +207,13 @@ export async function mockSupabase(page: Page, db: MockDb = createSeed()) {
     if (path === '/auth/v1/user') return json(user);
     if (path === '/auth/v1/logout') return route.fulfill({ status: 204 });
 
+    // --- Edge Function de la foto: devuelve siempre la misma "lectura" ---
+    if (path === '/functions/v1/scan-list' && method === 'POST') {
+      const body = req.postDataJSON() as { image?: string; mimeType?: string };
+      if (!body.image || body.mimeType !== 'image/jpeg') return json({ error: 'Falta la foto.' }, 400);
+      return json({ items: db.scan_result });
+    }
+
     // --- Funciones SQL (rpc) ---
     // reorder_categories / reorder_lists: sort_order = posición × 10, como en la migración.
     const rpc = path.match(/^\/rest\/v1\/rpc\/reorder_(categories|lists)$/);
@@ -217,7 +232,7 @@ export async function mockSupabase(page: Page, db: MockDb = createSeed()) {
     if (table === 'list_summaries')
       return respondRows(applyOrder(applyFilters(listSummaries(db), url.searchParams), url.searchParams));
 
-    const rows = db[table as keyof MockDb] as Row[] | undefined;
+    const rows = db[table as Exclude<keyof MockDb, 'scan_result'>] as Row[] | undefined;
     if (!rows) return json({ message: `Tabla no simulada: ${table}` }, 404);
     const present = (r: Row) => (table === 'list_items' ? withProduct(db, r) : r);
 
