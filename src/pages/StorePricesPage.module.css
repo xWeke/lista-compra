@@ -1,0 +1,68 @@
+.summary {
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-xs);
+  margin-bottom: var(--space-lg);
+  padding: var(--space-md) var(--space-lg);
+  border: var(--border-card) solid var(--color-border);
+  border-radius: var(--radius-lg);
+  background: var(--color-primary);
+  color: var(--color-primary-text);
+  box-shadow: var(--shadow-hard);
+}
+
+.summaryLabel {
+  font-size: var(--font-sm);
+}
+
+.summaryTotal {
+  composes: display from global;
+  font-size: var(--font-title);
+  font-variant-numeric: tabular-nums;
+}
+
+.summaryNote {
+  font-size: var(--font-sm);
+}
+
+.row {
+  display: flex;
+  align-items: center;
+  gap: var(--space-sm);
+  margin-bottom: var(--space-md);
+  padding: var(--space-sm) var(--space-xs) var(--space-sm) var(--space-md);
+  border: var(--border-card) solid var(--color-border);
+  border-radius: var(--radius-lg);
+  background: var(--color-surface);
+  box-shadow: var(--shadow-hard-sm);
+}
+
+.texts {
+  flex: 1;
+  display: flex;
+  flex-direction: column;
+  min-width: 0;
+}
+
+.name {
+  font-weight: var(--weight-name);
+  overflow-wrap: anywhere;
+}
+
+.qty {
+  margin-left: var(--space-sm);
+  color: var(--color-text-muted);
+  font-size: var(--font-sm);
+}
+
+.match {
+  color: var(--color-text-muted);
+  font-size: var(--font-sm);
+  overflow-wrap: anywhere;
+}
+
+.cost {
+  font-weight: 700;
+  font-variant-numeric: tabular-nums;
+  white-space: nowrap;
+}

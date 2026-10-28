@@ -12,6 +12,7 @@ export async function scanListPhoto(photo: Blob): Promise<ScannedItem[]> {
   // functions.invoke añade el token de la sesión: la función sabe quién llama.
   const { data, error } = await supabase.functions.invoke<{ items: ScannedItem[] }>('scan-list', {
     body: { image: base64, mimeType },
+    timeout: 60_000, // la función corta a los 45 s; esto cubre además una conexión que no responde
   });
   if (error) {
     // Los errores de la función traen un mensaje en español en el cuerpo: se muestra ese.

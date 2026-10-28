@@ -214,6 +214,45 @@ test.describe('Foto de una lista', () => {
   });
 });
 
+test.describe('Precios de Mercadona', () => {
+  // Catálogo de prueba: leche brik 0,96 €, plátano 3 €/kg, huevos 2,70 €; sin pan ni lavavajillas.
+  test('la lista muestra cuánto costaría y el detalle empareja cada producto', async ({ app, page, db }) => {
+    await app.openList();
+    const tarjeta = page.getByRole('link', { name: /Mercadona/ });
+    // 1,5 kg × 3 € + 6 × 0,96 € + 2,70 € = 12,96 € (el pan y el lavavajillas no están en el catálogo)
+    await expect(tarjeta).toContainText(/12,96\s€/);
+    await expect(tarjeta).toContainText('2 productos sin precio');
+
+    await tarjeta.click();
+    await expect(page.getByRole('heading', { level: 1, name: 'Mercadona' })).toBeVisible();
+    const leche = page.getByRole('listitem').filter({ hasText: 'Leche entera6' });
+    await expect(leche).toContainText('Leche entera Hacendado · Brik'); // el más barato por litro, y el brik antes que el pack
+    await expect(leche).toContainText(/5,76\s€/);
+    await expect(page.getByRole('listitem').filter({ hasText: 'Pan de molde' })).toContainText(
+      'Sin equivalente en Mercadona',
+    );
+    expect(db.product_store_links.find((l) => l.product_id === 'p-leche')?.matched_by).toBe('auto');
+  });
+
+  test('"Cambiar" busca en el catálogo y la elección se recuerda', async ({ app, page, db }) => {
+    await app.openList();
+    await page.getByRole('link', { name: /Mercadona/ }).click();
+    await page.getByRole('button', { name: 'Cambiar Leche entera' }).click();
+
+    const panel = page.getByRole('dialog');
+    await expect(panel.getByRole('searchbox', { name: 'Buscar en Mercadona' })).toHaveValue('Leche entera');
+    await panel.getByRole('button', { name: /Leche entera Asturiana/ }).click();
+    await expect(panel).toBeHidden();
+
+    // 6 × 1,29 € = 7,74 €; total 4,50 + 7,74 + 2,70 = 14,94 €
+    await expect(page.getByRole('listitem').filter({ hasText: 'Leche entera6' })).toContainText(/7,74\s€/);
+    await expect(page.getByRole('region', { name: 'Total' })).toContainText(/14,94\s€/);
+    await expect
+      .poll(() => db.product_store_links.find((l) => l.product_id === 'p-leche'))
+      .toMatchObject({ store_product_id: 'sp-leche-asturiana', matched_by: 'manual' });
+  });
+});
+
 test.describe('Organizar', () => {
   test('el modo Organizar cambia la categoría de un producto con el desplegable y se recuerda', async ({
     app,

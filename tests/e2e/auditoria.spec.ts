@@ -101,6 +101,16 @@ test.describe('Auditoría', () => {
     await expectClean(page, 'Revisión de foto');
   });
 
+  test('precios de un súper y buscador', async ({ app, page }) => {
+    await app.openList();
+    await page.getByRole('link', { name: /Mercadona/ }).click();
+    await expect(page.getByRole('button', { name: 'Cambiar Leche entera' })).toBeVisible();
+    await expectClean(page, 'Precios en Mercadona');
+    await page.getByRole('button', { name: 'Cambiar Leche entera' }).click();
+    await expect(page.getByRole('dialog').getByRole('button', { name: /Leche entera Asturiana/ })).toBeVisible();
+    await expectClean(page, 'Buscador del catálogo');
+  });
+
   test('categorías', async ({ app, page }) => {
     await app.login();
     await page.getByRole('link', { name: 'Categorías' }).click();

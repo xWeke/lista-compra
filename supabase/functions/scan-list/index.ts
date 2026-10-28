@@ -82,7 +82,8 @@ Deno.serve(async (req) => {
   // --- Gemini: respuesta en JSON con un esquema fijo (no hay que "parsear" texto libre) ---
   const apiKey = Deno.env.get('GEMINI_API_KEY');
   if (!apiKey) return json({ error: 'Falta configurar GEMINI_API_KEY en Supabase.' }, 500, headers);
-  const model = Deno.env.get('GEMINI_MODEL') || 'gemini-3.8-flash';
+  // Modelo principal y, si está saturado (503) o sin cupo (429), uno más ligero con su propio cupo gratuito.
+  const models = [...new Set([Deno.env.get('GEMINI_MODEL') || 'gemini-3.8-flash', 'gemini-3.5-flash-lite'])];
   const categoryNames = (categories ?? []).map((c) => c.name);
 
   const itemSchema: Record<string, unknown> = {
@@ -91,33 +92,69 @@ Deno.serve(async (req) => {
       name: { type: 'STRING' },
       quantity: { type: 'NUMBER' },
       unit: { type: 'STRING', enum: UNITS },
-      category: { type: 'STRING', enum: [...categoryNames, ''] },
+      // Texto libre (Gemini rechaza listas de valores con ""): se empareja después con las del hogar.
+      category: { type: 'STRING' },
     },
     required: ['name', 'quantity', 'unit', 'category'],
   };
 
-  const geminiRes = await fetch(`https://generativelanguage.googleapis.com/v1beta/models/${model}:generateContent`, {
-    method: 'POST',
-    headers: { 'Content-Type': 'application/json', 'x-goog-api-key': apiKey },
-    body: JSON.stringify({
-      contents: [{ parts: [{ text: prompt(categoryNames) }, { inline_data: { mime_type: mimeType, data: image } }] }],
-      generation_config: {
-        response_mime_type: 'application/json',
-        response_schema: {
-          type: 'OBJECT',
-          properties: { items: { type: 'ARRAY', items: itemSchema } },
-          required: ['items'],
-        },
+  const requestBody = JSON.stringify({
+    contents: [{ parts: [{ text: prompt(categoryNames) }, { inline_data: { mime_type: mimeType, data: image } }] }],
+    generation_config: {
+      response_mime_type: 'application/json',
+      response_schema: {
+        type: 'OBJECT',
+        properties: { items: { type: 'ARRAY', items: itemSchema } },
+        required: ['items'],
       },
-    }),
+    },
   });
 
+  // Hasta 25 s por modelo (la app espera como mucho 60): si uno se atasca, mejor probar el siguiente.
+  let geminiRes: Response | null = null;
+  for (const model of models) {
+    const started = Date.now();
+    try {
+      geminiRes = await fetch(`https://generativelanguage.googleapis.com/v1beta/models/${model}:generateContent`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json', 'x-goog-api-key': apiKey },
+        body: requestBody,
+        signal: AbortSignal.timeout(25_000),
+      });
+    } catch (e) {
+      console.error('Gemini sin respuesta', model, Date.now() - started, 'ms', String(e));
+      geminiRes = null;
+      continue;
+    }
+    console.log('Gemini', model, geminiRes.status, Date.now() - started, 'ms', Math.round(image.length / 1024), 'KB');
+    if (geminiRes.status !== 503 && geminiRes.status !== 429) break;
+    console.error('Gemini', model, 'saturado o sin cupo:', await geminiRes.text());
+  }
+
+  if (!geminiRes) {
+    return json({ error: 'La IA está tardando demasiado. Prueba otra vez en un momento.' }, 504, headers);
+  }
+  if (geminiRes.status === 503) {
+    return json({ error: 'La IA está saturada ahora mismo. Prueba otra vez en unos minutos.' }, 503, headers);
+  }
   if (geminiRes.status === 429) {
     return json({ error: 'Se ha agotado el uso gratuito de la IA por ahora. Prueba más tarde.' }, 429, headers);
   }
   if (!geminiRes.ok) {
-    console.error('Gemini', geminiRes.status, await geminiRes.text());
-    return json({ error: 'La IA no ha podido leer la foto. Prueba otra vez.' }, 502, headers);
+    // El motivo de Google (sin la clave) va también en el mensaje: así se puede diagnosticar desde el móvil.
+    const detail = await geminiRes.text();
+    console.error('Gemini', geminiRes.status, detail);
+    let reason = '';
+    try {
+      reason = JSON.parse(detail)?.error?.message ?? '';
+    } catch {
+      reason = detail.slice(0, 200);
+    }
+    return json(
+      { error: `La IA no ha podido leer la foto (${geminiRes.status}${reason ? `: ${reason.slice(0, 200)}` : ''}).` },
+      502,
+      headers,
+    );
   }
 
   // --- Respuesta: se valida todo (lo que diga la IA es un dato más, no algo de fiar) ---
@@ -133,7 +170,9 @@ Deno.serve(async (req) => {
     return json({ error: 'La IA no ha devuelto una lista válida. Prueba otra vez.' }, 502, headers);
   }
 
-  const byName = new Map((categories ?? []).map((c) => [c.name, c.id as string]));
+  // Emparejar sin distinguir mayúsculas ni tildes ("lacteos y huevos" = "Lácteos y huevos").
+  const norm = (v: string) => v.trim().normalize('NFD').replace(/[̀-ͯ]/g, '').toLowerCase();
+  const byName = new Map((categories ?? []).map((c) => [norm(c.name), c.id as string]));
   const rawItems = (raw as { items?: unknown }).items;
   const items: ScannedItem[] = (Array.isArray(rawItems) ? rawItems : [])
     .slice(0, MAX_ITEMS)
@@ -146,7 +185,7 @@ Deno.serve(async (req) => {
         name,
         quantity: Number.isFinite(q) && q > 0 && q <= 999 ? Math.round(q * 1000) / 1000 : 1,
         unit: UNITS.includes(String(it?.unit)) ? String(it.unit) : 'ud',
-        category_id: byName.get(String(it?.category ?? '')) ?? null,
+        category_id: byName.get(norm(String(it?.category ?? ''))) ?? null,
       };
     })
     .filter((it) => it.name.length > 0);

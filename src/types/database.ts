@@ -239,6 +239,55 @@ export type Database = {
           },
         ];
       };
+      product_store_links: {
+        Row: {
+          created_at: string;
+          matched_by: string;
+          product_id: string;
+          store_id: string;
+          store_product_id: string | null;
+          updated_at: string;
+        };
+        Insert: {
+          created_at?: string;
+          matched_by: string;
+          product_id: string;
+          store_id: string;
+          store_product_id?: string | null;
+          updated_at?: string;
+        };
+        Update: {
+          created_at?: string;
+          matched_by?: string;
+          product_id?: string;
+          store_id?: string;
+          store_product_id?: string | null;
+          updated_at?: string;
+        };
+        Relationships: [
+          {
+            foreignKeyName: 'product_store_links_product_id_fkey';
+            columns: ['product_id'];
+            isOneToOne: false;
+            referencedRelation: 'products';
+            referencedColumns: ['id'];
+          },
+          {
+            foreignKeyName: 'product_store_links_store_id_fkey';
+            columns: ['store_id'];
+            isOneToOne: false;
+            referencedRelation: 'stores';
+            referencedColumns: ['id'];
+          },
+          {
+            foreignKeyName: 'product_store_links_store_product_id_fkey';
+            columns: ['store_product_id'];
+            isOneToOne: false;
+            referencedRelation: 'store_products';
+            referencedColumns: ['id'];
+          },
+        ];
+      };
       products: {
         Row: {
           barcode: string | null;
@@ -308,6 +357,133 @@ export type Database = {
         };
         Relationships: [];
       };
+      store_product_prices: {
+        Row: {
+          observed_at: string;
+          price: number;
+          reference_price: number | null;
+          store_product_id: string;
+        };
+        Insert: {
+          observed_at?: string;
+          price: number;
+          reference_price?: number | null;
+          store_product_id: string;
+        };
+        Update: {
+          observed_at?: string;
+          price?: number;
+          reference_price?: number | null;
+          store_product_id?: string;
+        };
+        Relationships: [
+          {
+            foreignKeyName: 'store_product_prices_store_product_id_fkey';
+            columns: ['store_product_id'];
+            isOneToOne: false;
+            referencedRelation: 'store_products';
+            referencedColumns: ['id'];
+          },
+        ];
+      };
+      store_products: {
+        Row: {
+          available: boolean;
+          category: string | null;
+          created_at: string;
+          external_id: string;
+          id: string;
+          image_url: string | null;
+          is_pack: boolean;
+          name: string;
+          name_normalized: string | null;
+          packaging: string | null;
+          price: number;
+          reference_format: string | null;
+          reference_price: number | null;
+          seen_at: string;
+          size_format: string | null;
+          store_id: string;
+          unit_size: number | null;
+          updated_at: string;
+          url: string | null;
+        };
+        Insert: {
+          available?: boolean;
+          category?: string | null;
+          created_at?: string;
+          external_id: string;
+          id?: string;
+          image_url?: string | null;
+          is_pack?: boolean;
+          name: string;
+          name_normalized?: string | null;
+          packaging?: string | null;
+          price: number;
+          reference_format?: string | null;
+          reference_price?: number | null;
+          seen_at?: string;
+          size_format?: string | null;
+          store_id: string;
+          unit_size?: number | null;
+          updated_at?: string;
+          url?: string | null;
+        };
+        Update: {
+          available?: boolean;
+          category?: string | null;
+          created_at?: string;
+          external_id?: string;
+          id?: string;
+          image_url?: string | null;
+          is_pack?: boolean;
+          name?: string;
+          name_normalized?: string | null;
+          packaging?: string | null;
+          price?: number;
+          reference_format?: string | null;
+          reference_price?: number | null;
+          seen_at?: string;
+          size_format?: string | null;
+          store_id?: string;
+          unit_size?: number | null;
+          updated_at?: string;
+          url?: string | null;
+        };
+        Relationships: [
+          {
+            foreignKeyName: 'store_products_store_id_fkey';
+            columns: ['store_id'];
+            isOneToOne: false;
+            referencedRelation: 'stores';
+            referencedColumns: ['id'];
+          },
+        ];
+      };
+      stores: {
+        Row: {
+          catalog_synced_at: string | null;
+          has_catalog: boolean;
+          id: string;
+          name: string;
+          sort_order: number;
+        };
+        Insert: {
+          catalog_synced_at?: string | null;
+          has_catalog?: boolean;
+          id: string;
+          name: string;
+          sort_order?: number;
+        };
+        Update: {
+          catalog_synced_at?: string | null;
+          has_catalog?: boolean;
+          id?: string;
+          name?: string;
+          sort_order?: number;
+        };
+        Relationships: [];
+      };
     };
     Views: {
       list_summaries: {
@@ -335,10 +511,45 @@ export type Database = {
       };
     };
     Functions: {
+      auto_link_products: {
+        Args: { p_product_ids: string[]; p_store: string };
+        Returns: undefined;
+      };
+      check_sync_secret: { Args: { secret: string }; Returns: boolean };
       is_household_member: { Args: { hh: string }; Returns: boolean };
       normalize_name: { Args: { value: string }; Returns: string };
       reorder_categories: { Args: { ids: string[] }; Returns: undefined };
       reorder_lists: { Args: { ids: string[] }; Returns: undefined };
+      search_store_products: {
+        Args: { p_limit?: number; p_query: string; p_store: string };
+        Returns: {
+          available: boolean;
+          category: string | null;
+          created_at: string;
+          external_id: string;
+          id: string;
+          image_url: string | null;
+          is_pack: boolean;
+          name: string;
+          name_normalized: string | null;
+          packaging: string | null;
+          price: number;
+          reference_format: string | null;
+          reference_price: number | null;
+          seen_at: string;
+          size_format: string | null;
+          store_id: string;
+          unit_size: number | null;
+          updated_at: string;
+          url: string | null;
+        }[];
+        SetofOptions: {
+          from: '*';
+          to: 'store_products';
+          isOneToOne: false;
+          isSetofReturn: true;
+        };
+      };
       seed_household_defaults: { Args: { hh: string }; Returns: undefined };
     };
     Enums: {

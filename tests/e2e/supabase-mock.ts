@@ -97,19 +97,67 @@ export function createSeed() {
     { name: 'Garabato', quantity: 1, unit: 'ud', category_id: null },
   ];
 
-  return { categories, products, list_items, lists, profiles, scan_result };
+  // Súpers y un trozo del catálogo de Mercadona (como lo deja la Edge Function sync-mercadona).
+  const stores: Row[] = [
+    { id: 'mercadona', name: 'Mercadona', sort_order: 10, has_catalog: true, catalog_synced_at: t },
+    { id: 'dia', name: 'Dia', sort_order: 40, has_catalog: false, catalog_synced_at: null },
+  ];
+  const store_products: Row[] = [
+    ['sp-leche-brik', 'Leche entera Hacendado', 'Brik', 0.96, 0.96, 'L'],
+    ['sp-leche-pack', 'Leche entera Hacendado', 'Pack-6', 5.76, 0.96, 'L'],
+    ['sp-leche-asturiana', 'Leche entera Asturiana', 'Brik', 1.29, 1.29, 'L'],
+    ['sp-platano', 'Plátano de Canarias IGP', 'Pieza', 0.48, 3.0, 'kg'],
+    ['sp-huevos', 'Huevos grandes L Hacendado', 'Caja 12', 2.7, 0.225, 'ud'],
+  ].map(([id, name, packaging, price, reference_price, reference_format]) => ({
+    id: id as string,
+    store_id: 'mercadona',
+    external_id: id,
+    name,
+    name_normalized: normalize(name as string),
+    packaging,
+    price,
+    reference_price,
+    reference_format,
+    image_url: null,
+    available: true,
+  }));
+  const product_store_links: Row[] = [];
+
+  return {
+    categories,
+    products,
+    list_items,
+    lists,
+    profiles,
+    stores,
+    store_products,
+    product_store_links,
+    scan_result,
+  };
 }
 
 export type MockDb = ReturnType<typeof createSeed>;
 
-/** Aplica los filtros PostgREST de la URL (col=eq.valor, col=is.null) a unas filas. */
+/** ¿Contiene `name` todas las palabras de `query`? (plurales simples: "platanos" ≈ "platano").
+ *  Aproximación del parecido por trigramas de las funciones SQL search_store_products / auto_link_products. */
+function matches(query: string, name: string) {
+  const words = normalize(query).split(/\s+/).filter(Boolean);
+  return words.length > 0 && words.every((w) => normalize(name).includes(w.replace(/e?s$/, '')));
+}
+const cheapestFirst = (a: Row, b: Row) =>
+  Number(a.reference_price) - Number(b.reference_price) || Number(a.price) - Number(b.price);
+
+/** Aplica los filtros PostgREST de la URL (col=eq.valor, col=is.null, col=in.(a,b)) a unas filas. */
 function applyFilters(rows: Row[], params: URLSearchParams) {
   const reserved = new Set(['select', 'order', 'limit', 'offset', 'on_conflict', 'columns']);
   let out = rows;
   for (const [col, expr] of params) {
     if (reserved.has(col)) continue;
     if (expr === 'is.null') out = out.filter((r) => r[col] === null || r[col] === undefined);
-    else if (expr.startsWith('eq.')) {
+    else if (expr.startsWith('in.(')) {
+      const values = expr.slice(4, -1).split(',');
+      out = out.filter((r) => values.includes(String(r[col])));
+    } else if (expr.startsWith('eq.')) {
       const value = expr.slice(3);
       out = out.filter((r) => String(r[col]) === value);
     }
@@ -214,6 +262,37 @@ export async function mockSupabase(page: Page, db: MockDb = createSeed()) {
       return json({ items: db.scan_result });
     }
 
+    // --- Funciones SQL de precios ---
+    if (path === '/rest/v1/rpc/search_store_products' && method === 'POST') {
+      const { p_store, p_query } = req.postDataJSON() as { p_store: string; p_query: string };
+      return json(
+        db.store_products
+          .filter((sp) => sp.store_id === p_store && matches(p_query, String(sp.name)))
+          .sort(cheapestFirst),
+      );
+    }
+    if (path === '/rest/v1/rpc/auto_link_products' && method === 'POST') {
+      const { p_store, p_product_ids } = req.postDataJSON() as { p_store: string; p_product_ids: string[] };
+      for (const productId of p_product_ids) {
+        const linked = db.product_store_links.some((l) => l.product_id === productId && l.store_id === p_store);
+        const product = db.products.find((p) => p.id === productId);
+        if (linked || !product) continue;
+        const best = db.store_products
+          .filter((sp) => sp.store_id === p_store && matches(String(product.name), String(sp.name)))
+          .sort(cheapestFirst)[0];
+        if (best) {
+          db.product_store_links.push({
+            id: `${productId}-${p_store}`,
+            product_id: productId,
+            store_id: p_store,
+            store_product_id: best.id,
+            matched_by: 'auto',
+          });
+        }
+      }
+      return route.fulfill({ status: 204 });
+    }
+
     // --- Funciones SQL (rpc) ---
     // reorder_categories / reorder_lists: sort_order = posición × 10, como en la migración.
     const rpc = path.match(/^\/rest\/v1\/rpc\/reorder_(categories|lists)$/);
@@ -234,14 +313,23 @@ export async function mockSupabase(page: Page, db: MockDb = createSeed()) {
 
     const rows = db[table as Exclude<keyof MockDb, 'scan_result'>] as Row[] | undefined;
     if (!rows) return json({ message: `Tabla no simulada: ${table}` }, 404);
-    const present = (r: Row) => (table === 'list_items' ? withProduct(db, r) : r);
+    const present = (r: Row) =>
+      table === 'list_items'
+        ? withProduct(db, r)
+        : table === 'product_store_links'
+          ? { ...r, store_product: db.store_products.find((sp) => sp.id === r.store_product_id) ?? null }
+          : r;
 
     if (method === 'GET')
       return respondRows(applyOrder(applyFilters(rows, url.searchParams), url.searchParams).map(present));
 
     if (method === 'POST') {
       const body = req.postDataJSON();
+      // upsert (on_conflict=col1,col2): si ya hay una fila con esos valores, se actualiza
+      const conflictCols = url.searchParams.get('on_conflict')?.split(',');
       const inserted = (Array.isArray(body) ? body : [body]).map((b: Record<string, unknown>) => {
+        const existing = conflictCols && rows.find((r) => conflictCols.every((c) => r[c] === b[c]));
+        if (existing) return Object.assign(existing, b, { updated_at: now() });
         const row: Row = {
           id: `${table}-${crypto.randomUUID().slice(0, 8)}`,
           created_at: now(),

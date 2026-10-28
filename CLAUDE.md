@@ -77,7 +77,12 @@ Desde otra red, `npm run db:push` normal. Proyecto: `wnpzgrnffjbmcpwxasgh` (eu-c
   `GEMINI_MODEL` (opcional, por defecto `gemini-3.8-flash`).
 - `verify_jwt = false` en `supabase/config.toml` (la sesión la comprueba el código con `auth.getUser`). CORS: solo la web
   publicada y localhost (lista `ALLOWED_ORIGINS` en la función).
-- Desplegar (funciona desde la red del trabajo, va por HTTPS): `npx supabase functions deploy scan-list --use-api`.
+- `supabase/functions/sync-mercadona/`: vuelca cada noche el catálogo de tienda.mercadona.es (API interna de su web, no
+  oficial; almacén `mad1` = Madrid, secret opcional `MERCADONA_WAREHOUSE`) en `store_products`. La lanza **pg_cron** con
+  pg_net y un secreto que vive solo en **Vault** (`catalog_sync_secret`, lo comprueba `check_sync_secret`); escribe con
+  service_role (la da Supabase a la función: nunca sale de Supabase). Programación: `supabase/setup_catalog_sync.sql`
+  (una vez, en el SQL Editor). Resultado del último volcado: `select status_code, content from net._http_response order by created desc limit 1;`
+- Desplegar (funciona desde la red del trabajo, va por HTTPS): `npx supabase functions deploy <nombre> --use-api`.
 
 ### Despliegue (GitHub Pages)
 
@@ -124,6 +129,7 @@ supabase/migrations/    SQL versionado
 ### Base de datos
 
 - Toda tabla nueva: `household_id` (o colgar de una que lo tenga), **RLS activado** con `public.is_household_member(...)`, `grant` explícito a `authenticated`, trigger `set_updated_at` si tiene `updated_at`, índices en FKs.
+  El proyecto **no** da permisos automáticos a tablas nuevas: si una Edge Function escribe con service_role, `grant` también a `service_role` (se salta RLS, no los GRANT).
 - Si la app debe verla en tiempo real: `alter publication supabase_realtime add table ...` y añadirla a `RealtimeTable` en `src/lib/realtime.ts`.
 - Nunca editar una migración ya aplicada: crear otra nueva.
 - Tras cada migración: `npm run db:push` y `npm run db:types`.
@@ -145,8 +151,15 @@ supabase/migrations/    SQL versionado
 ## Fases
 
 1. **[EN CURSO] Lista compartida en tiempo real**: listas, añadir/editar/borrar, marcar comprado, cantidad/unidad, categorías.
-2. **Precios manuales por supermercado** y comparativa del total de la lista. Diseño previsto:
+2. **Precios manuales por supermercado**: descartada por el usuario (no quiere apuntar precios). Diseño que había:
    - `stores` (global: Mercadona, Lidl, Carrefour, Dia…).
    - `product_prices` (product_id, store_id, price, tamaño de envase, observed_at, `source` 'manual'|'auto') — histórico; precio vigente = último por (producto, súper).
    - Vista `list_store_totals`: total por lista y súper + nº de productos sin precio.
-3. **Precios automáticos**: `store_products` (catálogo bruto descargado por súper) + `product_store_links` (emparejado por EAN/manual/fuzzy). Job (Edge Function + pg_cron, GitHub Actions programado o script propio) que vuelca a `product_prices` con `source='auto'`.
+3. **[EN CURSO] Precios automáticos** (el usuario no quiere apuntar precios a mano). Hecho: **Mercadona**.
+   - `stores` (globales), `store_products` (catálogo volcado), `store_product_prices` (historial, trigger al cambiar precio),
+     `product_store_links` (producto del hogar → del súper; `auto` o `manual`; `store_product_id` null = "no lo compramos aquí").
+   - `auto_link_products` empareja solo (pg_trgm `word_similarity`; entre los más parecidos, el más barato por kg/L y luego
+     el envase más barato). La app la llama al pedir los precios; "Cambiar" usa `search_store_products`.
+   - Coste de una línea (`lineCost`): kg/g/l/ml con el precio de referencia (€/kg, €/L); si no, cantidad × precio del envase.
+   - Pendiente: Ahorramas (HTML de su web, frágil). Dia y Carrefour bloquean el acceso automático (no saltárselo) y Lidl no
+     vende comida online: para esos, idea de **foto del ticket** con Gemini.

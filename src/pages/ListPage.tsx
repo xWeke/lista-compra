@@ -1,6 +1,7 @@
 // Detalle de lista: añadir productos, agrupados por categoría; comprados al final.
 // Modo Organizar: cada producto muestra un desplegable para cambiarlo de categoría sin abrir el panel.
 // 📷 Foto: se lee una lista en papel con IA (Edge Function scan-list) y, tras revisarla, se añade entera.
+// Tarjeta por cada súper con catálogo (Mercadona): cuánto costaría la lista allí.
 import { useMemo, useRef, useState, type ChangeEvent } from 'react';
 import { useParams } from 'react-router';
 
@@ -12,12 +13,15 @@ import { ItemEditModal, type ItemDraft } from '@/components/ItemEditModal';
 import { ItemRow } from '@/components/ItemRow';
 import { Page } from '@/components/Page';
 import { ScanReviewModal, type ReviewItem } from '@/components/ScanReviewModal';
+import { StoreTotalCard } from '@/components/StoreTotalCard';
 import type { Category } from '@/features/categories/api';
 import { useCategories } from '@/features/categories/hooks';
 import { useHousehold, useMemberNames } from '@/features/household/hooks';
 import { UNITS, itemCategoryId, normalizeName, type ListItem } from '@/features/items/api';
 import { useItemMutations, useListItems, useProducts } from '@/features/items/hooks';
 import { useList } from '@/features/lists/hooks';
+import { priceLines, type Store } from '@/features/prices/api';
+import { useStoreLinks, useStores } from '@/features/prices/hooks';
 import type { ScannedItem } from '@/features/scan/api';
 import { useScanList } from '@/features/scan/hooks';
 import { confirm, notifyError } from '@/lib/confirm';
@@ -26,6 +30,24 @@ import { formatQuantity } from '@/lib/format';
 import styles from './ListPage.module.css';
 
 type Section = { key: string; title: string; items: ListItem[] };
+
+/** Total de la lista en un súper con catálogo (un componente por súper: cada uno con su consulta). */
+function CatalogStoreTotal({ store, listId, items }: { store: Store; listId: string; items: ListItem[] }) {
+  const lines = items.map((i) => ({ productId: i.product.id, quantity: Number(i.quantity), unit: i.unit }));
+  const links = useStoreLinks(
+    store.id,
+    lines.map((l) => l.productId),
+  );
+  const { total, missing } = priceLines(lines, links.data ?? []);
+  return (
+    <StoreTotalCard
+      storeName={store.name}
+      total={links.data ? total : null}
+      missing={missing}
+      to={`/listas/${listId}/precios/${store.id}`}
+    />
+  );
+}
 
 /** Pendientes agrupados por categoría (en su orden) y, al final, los comprados. */
 function buildSections(items: ListItem[], categories: Category[]): Section[] {
@@ -58,6 +80,7 @@ export function ListPage() {
   // Producto recién creado sin categoría: se pregunta debajo de la barra de añadir.
   const [askCategory, setAskCategory] = useState<{ productId: string; name: string } | null>(null);
   const [organizing, setOrganizing] = useState(false);
+  const catalogStores = (useStores().data ?? []).filter((s) => s.has_catalog);
   const scan = useScanList();
   const photoInput = useRef<HTMLInputElement>(null);
   const [review, setReview] = useState<ReviewItem[] | null>(null);
@@ -227,6 +250,12 @@ export function ListPage() {
           </div>
         </>
       )}
+
+      {!organizing &&
+        (items.data?.length ?? 0) > 0 &&
+        catalogStores.map((store) => (
+          <CatalogStoreTotal key={store.id} store={store} listId={id} items={items.data ?? []} />
+        ))}
 
       {!organizing && askCategory && promptOptions.length > 0 && (
         <CategoryPrompt

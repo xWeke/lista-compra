@@ -19,4 +19,8 @@ export const queryKeys = {
   items: (listId: string) => ['items', listId] as const,
   categories: (householdId: string) => ['categories', householdId] as const,
   products: (householdId: string) => ['products', householdId] as const,
+  stores: ['stores'] as const,
+  /** Emparejamientos de unos productos en un súper (la clave incluye los ids: cambian al añadir a la lista). */
+  storeLinks: (storeId: string, productIds: string[]) => ['storeLinks', storeId, productIds] as const,
+  storeSearch: (storeId: string, query: string) => ['storeSearch', storeId, query] as const,
 };

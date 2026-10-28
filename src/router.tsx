@@ -7,6 +7,7 @@ import { CategoriesPage } from '@/pages/CategoriesPage';
 import { ListPage } from '@/pages/ListPage';
 import { ListsPage } from '@/pages/ListsPage';
 import { LoginPage } from '@/pages/LoginPage';
+import { StorePricesPage } from '@/pages/StorePricesPage';
 
 export const router = createHashRouter([
   {
@@ -18,6 +19,7 @@ export const router = createHashRouter([
     children: [
       { path: '/', element: <ListsPage /> },
       { path: '/listas/:id', element: <ListPage /> },
+      { path: '/listas/:id/precios/:storeId', element: <StorePricesPage /> },
       { path: '/categorias', element: <CategoriesPage /> },
     ],
   },

@@ -418,3 +418,8 @@ enabled = true
 # así funciona igual con las claves nuevas (publishable) que con las antiguas (JWT).
 [functions.scan-list]
 verify_jwt = false
+
+# Volcado nocturno del catálogo de Mercadona (lo lanza pg_cron). No usa sesión de usuario: se protege
+# con el secreto de Vault que comprueba la propia función (check_sync_secret).
+[functions.sync-mercadona]
+verify_jwt = false

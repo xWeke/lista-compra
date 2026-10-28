@@ -7,7 +7,7 @@ import { useEffect } from 'react';
 import { supabase } from '@/lib/supabase';
 
 export type RealtimeTable = {
-  table: 'lists' | 'list_items' | 'categories' | 'products';
+  table: 'lists' | 'list_items' | 'categories' | 'products' | 'product_store_links';
   /** Filtro de Realtime, p. ej. `list_id=eq.<uuid>` (los DELETE no se pueden filtrar). */
   filter?: string;
 };
