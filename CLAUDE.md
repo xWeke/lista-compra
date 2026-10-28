@@ -82,6 +82,12 @@ Desde otra red, `npm run db:push` normal. Proyecto: `wnpzgrnffjbmcpwxasgh` (eu-c
   pg_net y un secreto que vive solo en **Vault** (`catalog_sync_secret`, lo comprueba `check_sync_secret`); escribe con
   service_role (la da Supabase a la función: nunca sale de Supabase). Programación: `supabase/setup_catalog_sync.sql`
   (una vez, en el SQL Editor). Resultado del último volcado: `select status_code, content from net._http_response order by created desc limit 1;`
+- `supabase/functions/sync-ahorramas/`: igual para www.ahorramas.com, pero **leyendo el HTML** de las páginas de categoría
+  (`?start=0&sz=1000`; las saca del sitemap de categorías). Respeta su robots.txt: nada de buscador, `Search-ShowAjax` ni
+  `ver-todo`. Su web es lenta (Frescos ~90 s): va **por partes** (`store_sync_parts`), cada ejecución empieza partes
+  durante 45 s; pg_cron cada 10 min de madrugada; una parte de < 20 h no se repite. Producto no visto en 3 días = no disponible.
+- Súpers que **no** se pueden volcar (bloquean el acceso automático; no saltárselo): Alcampo, Dia, Carrefour,
+  El Corte Inglés, Hipercor. Lidl no vende comida online. Posibles: Eroski (HTML), Consum (API JSON con EAN).
 - Desplegar (funciona desde la red del trabajo, va por HTTPS): `npx supabase functions deploy <nombre> --use-api`.
 
 ### Despliegue (GitHub Pages)
@@ -161,5 +167,5 @@ supabase/migrations/    SQL versionado
    - `auto_link_products` empareja solo (pg_trgm `word_similarity`; entre los más parecidos, el más barato por kg/L y luego
      el envase más barato). La app la llama al pedir los precios; "Cambiar" usa `search_store_products`.
    - Coste de una línea (`lineCost`): kg/g/l/ml con el precio de referencia (€/kg, €/L); si no, cantidad × precio del envase.
-   - Pendiente: Ahorramas (HTML de su web, frágil). Dia y Carrefour bloquean el acceso automático (no saltárselo) y Lidl no
-     vende comida online: para esos, idea de **foto del ticket** con Gemini.
+   - Hecho también: **Ahorramas** (HTML, frágil si cambian la web). Para los bloqueados (Alcampo, Dia, Carrefour…) y Lidl,
+     idea pendiente: **foto del ticket** con Gemini.

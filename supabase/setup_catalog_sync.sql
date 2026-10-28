@@ -43,3 +43,24 @@ select net.http_post(
   body := '{}'::jsonb,
   timeout_milliseconds := 140000
 );
+
+-- -----------------------------------------------------------------------------
+-- Ahorramas (después de la migración 20261028150000_ahorramas_catalog.sql)
+-- Cada 10 min de 04:00 a 06:50 UTC (05:00-07:50 / 06:00-08:50 en España). Cada ejecución descarga
+-- ~45-90 s de categorías pendientes; si todo está al día, no hace nada.
+-- -----------------------------------------------------------------------------
+select cron.schedule(
+  'sync-ahorramas',
+  '*/10 4-6 * * *',
+  $$
+  select net.http_post(
+    url := 'https://wnpzgrnffjbmcpwxasgh.supabase.co/functions/v1/sync-ahorramas',
+    headers := jsonb_build_object(
+      'Content-Type', 'application/json',
+      'x-sync-secret', (select decrypted_secret from vault.decrypted_secrets where name = 'catalog_sync_secret')
+    ),
+    body := '{}'::jsonb,
+    timeout_milliseconds := 150000
+  );
+  $$
+);

@@ -423,3 +423,7 @@ verify_jwt = false
 # con el secreto de Vault que comprueba la propia función (check_sync_secret).
 [functions.sync-mercadona]
 verify_jwt = false
+
+# Volcado del catálogo de Ahorramas por partes (lo lanza pg_cron cada 10 min de madrugada).
+[functions.sync-ahorramas]
+verify_jwt = false
