@@ -1,6 +1,6 @@
 ---
 name: probar-app
-description: Prueba Lista_Compra en un navegador real con Supabase simulado - ejecuta las pruebas E2E (npm run test:e2e), añade pruebas nuevas, depura fallos y explora la app con playwright-cli. Úsala tras cualquier cambio en pantallas, componentes, estilos o capa de datos, cuando el usuario pida probar o ver la app, y antes de desplegar.
+description: Prueba Lista_Compra en un navegador real con Supabase simulado - ejecuta las pruebas E2E (npm run test:e2e), añade pruebas nuevas, depura fallos y explora la app con playwright-cli. Úsala cuando el usuario pida pasar las pruebas o ver la app, y para escribir/ajustar pruebas de una funcionalidad nueva. NO lanzar la batería completa tras cada cambio: solo a petición del usuario (en GitHub Actions corre en cada push).
 ---
 
 # Probar la app
@@ -66,7 +66,8 @@ instalado: `npx playwright-cli install-browser webkit`. Con `attach` a una prueb
 
 ## Límites
 
-- WebKit en Windows/Linux **no es Safari de iPhone**: p. ej. no soporta `overscroll-behavior` (iOS sí). Lo que dependa
+- WebKit en Windows/Linux **no es Safari de iPhone**: p. ej. no soporta `overscroll-behavior` (iOS sí) y pinta la fuente
+  variable Darker Grotesque **fina** aunque pida negrita 900 (en el iPhone real se ve en negrita: confirmado). Lo que dependa
   del sistema (teclado, barra de inicio, "Añadir a pantalla de inicio") hay que verlo en el iPhone real.
 - El simulador no implementa RLS ni Realtime: la seguridad se prueba contra Supabase real (ver `supabase/`).
 - Las pruebas se ejecutan en GitHub Actions antes de cada despliegue; si fallan, no se publica.

@@ -1,4 +1,4 @@
-// Gestión de categorías: crear, renombrar, ordenar (↑↓, p. ej. según los pasillos) y borrar.
+// Gestión de categorías: crear, renombrar, ordenar arrastrando (≡, p. ej. según los pasillos) y borrar.
 import { useState } from 'react';
 
 import { Button } from '@/components/Button';
@@ -6,6 +6,7 @@ import { EmptyState } from '@/components/EmptyState';
 import { IconButton } from '@/components/IconButton';
 import { Page } from '@/components/Page';
 import { PromptModal } from '@/components/PromptModal';
+import { SortableList } from '@/components/SortableList';
 import type { Category } from '@/features/categories/api';
 import { useCategories, useCategoryMutations } from '@/features/categories/hooks';
 import { useHousehold } from '@/features/household/hooks';
@@ -45,11 +46,6 @@ export function CategoriesPage() {
     }
   };
 
-  const move = (index: number, delta: -1 | 1) => {
-    const other = data[index + delta];
-    if (other) mutations.swap.mutate({ a: data[index], b: other }, { onError: notifyError });
-  };
-
   return (
     <Page
       title="Categorías"
@@ -60,29 +56,28 @@ export function CategoriesPage() {
       ) : data.length === 0 ? (
         <EmptyState title="Sin categorías" />
       ) : (
-        <ul>
-          {data.map((c, index) => (
-            <li key={c.id} className={styles.row}>
+        <SortableList
+          items={data}
+          getId={(c) => c.id}
+          getLabel={(c) => c.name}
+          onReorder={(ids) => mutations.reorder.mutate(ids)}
+          rowClassName={styles.row}
+          renderItem={(c, handle) => (
+            <>
+              {handle}
               <span className={styles.name}>
                 {c.icon ? `${c.icon}  ` : ''}
                 {c.name}
               </span>
-              <IconButton symbol="↑" label="Subir" onClick={() => move(index, -1)} disabled={index === 0} />
-              <IconButton
-                symbol="↓"
-                label="Bajar"
-                onClick={() => move(index, 1)}
-                disabled={index === data.length - 1}
-              />
               <IconButton
                 symbol="✎"
                 label={`Renombrar ${c.name}`}
                 onClick={() => setPrompt({ mode: 'rename', category: c })}
               />
               <IconButton symbol="🗑" label={`Borrar ${c.name}`} onClick={() => onDelete(c)} />
-            </li>
-          ))}
-        </ul>
+            </>
+          )}
+        />
       )}
 
       <PromptModal

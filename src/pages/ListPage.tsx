@@ -1,4 +1,5 @@
 // Detalle de lista: añadir productos, agrupados por categoría; comprados al final.
+// Modo Organizar: cada producto muestra un desplegable para cambiarlo de categoría sin abrir el panel.
 import { useMemo, useState } from 'react';
 import { useParams } from 'react-router';
 
@@ -11,10 +12,11 @@ import { ItemRow } from '@/components/ItemRow';
 import { Page } from '@/components/Page';
 import type { Category } from '@/features/categories/api';
 import { useCategories } from '@/features/categories/hooks';
-import { useHousehold } from '@/features/household/hooks';
+import { useHousehold, useMemberNames } from '@/features/household/hooks';
 import { UNITS, itemCategoryId, normalizeName, type ListItem } from '@/features/items/api';
 import { useItemMutations, useListItems, useProducts } from '@/features/items/hooks';
 import { useList } from '@/features/lists/hooks';
+import { useAuth } from '@/lib/auth';
 import { confirm } from '@/lib/confirm';
 
 import styles from './ListPage.module.css';
@@ -46,10 +48,13 @@ export function ListPage() {
   const items = useListItems(id, householdId);
   const categories = useCategories(householdId);
   const products = useProducts(householdId);
+  const memberNames = useMemberNames(householdId).data ?? {};
+  const myId = useAuth().session?.user.id;
   const mutations = useItemMutations(id, householdId ?? '');
   const [editing, setEditing] = useState<ListItem | null>(null);
   // Producto recién creado sin categoría: se pregunta debajo de la barra de añadir.
   const [askCategory, setAskCategory] = useState<{ productId: string; name: string } | null>(null);
+  const [organizing, setOrganizing] = useState(false);
 
   const sections = useMemo(() => buildSections(items.data ?? [], categories.data ?? []), [items.data, categories.data]);
   const suggestions = useMemo<Suggestion[]>(
@@ -91,6 +96,13 @@ export function ListPage() {
     if (!askCategory) return;
     mutations.updateProduct.mutate({ productId: askCategory.productId, changes: { default_category_id: categoryId } });
     setAskCategory(null);
+  };
+
+  /** "Añadido por …" / "Comprado por …", solo si lo hizo otra persona (lo propio no se etiqueta). */
+  const bylineFor = (item: ListItem) => {
+    const who = item.is_checked ? item.checked_by : item.created_by;
+    if (!who || who === myId || !memberNames[who]) return null;
+    return `${item.is_checked ? 'Comprado' : 'Añadido'} por ${memberNames[who]}`;
   };
 
   const draft: ItemDraft | null = editing && {
@@ -136,15 +148,39 @@ export function ListPage() {
   };
 
   return (
-    <Page title={list.data?.name ?? 'Lista'} backTo="/">
-      <AddItemBar
-        suggestions={suggestions}
-        normalize={normalizeName}
-        onAdd={addProduct}
-        adding={mutations.add.isPending}
-      />
+    <Page
+      title={list.data?.name ?? 'Lista'}
+      backTo="/"
+      // En modo Organizar, "Hecho" fijo abajo: siempre a mano aunque la lista sea larga.
+      footer={organizing && <Button onClick={() => setOrganizing(false)}>Hecho</Button>}>
+      {organizing ? (
+        <p className={styles.hint}>Elige la categoría de cada producto. Se recordará la próxima vez que lo añadáis.</p>
+      ) : (
+        <>
+          <AddItemBar
+            suggestions={suggestions}
+            normalize={normalizeName}
+            onAdd={addProduct}
+            adding={mutations.add.isPending}
+          />
+          {/* Fuera de la cabecera: allí el título largo de la lista se cortaría */}
+          {sections.length > 0 && (
+            <div className={styles.toolbar}>
+              <Button
+                variant="ghost"
+                compact
+                onClick={() => {
+                  setAskCategory(null);
+                  setOrganizing(true);
+                }}>
+                Organizar
+              </Button>
+            </div>
+          )}
+        </>
+      )}
 
-      {askCategory && promptOptions.length > 0 && (
+      {!organizing && askCategory && promptOptions.length > 0 && (
         <CategoryPrompt
           key={askCategory.productId}
           productName={askCategory.name}
@@ -166,7 +202,7 @@ export function ListPage() {
             <div className={styles.sectionHeader}>
               <h2 className={styles.sectionTitle}>{section.title}</h2>
               {/* "Limpiar" junto a los comprados: en la cabecera no cabe junto a títulos largos */}
-              {section.key === 'checked' && (
+              {section.key === 'checked' && !organizing && (
                 <Button variant="ghost" compact onClick={clearChecked} aria-label="Limpiar comprados">
                   Limpiar
                 </Button>
@@ -181,8 +217,18 @@ export function ListPage() {
                   unit={item.unit}
                   note={item.note}
                   checked={item.is_checked}
+                  byline={bylineFor(item)}
                   onToggle={() => mutations.update.mutate({ id: item.id, changes: { is_checked: !item.is_checked } })}
                   onEdit={() => setEditing(item)}
+                  organize={
+                    organizing
+                      ? {
+                          categoryId: itemCategoryId(item),
+                          options: categoryOptions,
+                          onChange: (categoryId) => mutations.setCategory.mutate({ item, categoryId }),
+                        }
+                      : undefined
+                  }
                 />
               ))}
             </ul>

@@ -89,6 +89,31 @@ export function useItemMutations(listId: string, householdId: string) {
       onError: rollback,
       onSettled: refresh,
     }),
+    /** Cambiar de categoría desde el modo Organizar. La categoría es del producto (se recuerda para la próxima vez):
+     *  se guarda en el catálogo y se quita la que el ítem tuviera propia. Optimista: salta de sección al momento. */
+    setCategory: useMutation({
+      mutationFn: async ({ item, categoryId }: { item: ListItem; categoryId: string | null }) => {
+        await updateProduct(item.product.id, { default_category_id: categoryId });
+        if (item.category_id) await updateItem(item.id, { category_id: null });
+      },
+      onMutate: ({ item, categoryId }) =>
+        optimistic((items) =>
+          items.map((i) =>
+            i.product.id === item.product.id
+              ? {
+                  ...i,
+                  category_id: i.id === item.id ? null : i.category_id,
+                  product: { ...i.product, default_category_id: categoryId },
+                }
+              : i,
+          ),
+        ),
+      onError: rollback,
+      onSettled: () => {
+        refresh();
+        queryClient.invalidateQueries({ queryKey: queryKeys.products(householdId) });
+      },
+    }),
     updateProduct: useMutation({
       mutationFn: ({
         productId,

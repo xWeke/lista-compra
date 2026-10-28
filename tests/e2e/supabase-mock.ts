@@ -1,6 +1,6 @@
 // Supabase simulado para las pruebas E2E: intercepta las peticiones del navegador a Supabase
 // (Auth y la API REST de PostgREST) y responde con datos en memoria. No hay backend real.
-// Implementa solo lo que usa la app: login, select con filtros eq./is.null, insert, update y delete.
+// Implementa solo lo que usa la app: login, select con filtros eq./is.null, insert, update, delete y las funciones reorder_*.
 import type { Page, Route } from '@playwright/test';
 
 /** Debe coincidir con VITE_SUPABASE_URL del webServer en playwright.config.ts (.invalid nunca resuelve en DNS). */
@@ -9,13 +9,16 @@ export const SUPABASE_URL = 'https://supabase.e2e.invalid';
 export const HOUSEHOLD_ID = 'hh-1';
 export const LIST_ID = 'list-1';
 export const USER = { id: 'user-1', email: 'yo@ejemplo.com' };
+/** La otra persona del hogar (no inicia sesión en las pruebas; sus acciones vienen en los datos de partida). */
+export const PARTNER = { id: 'user-2', name: 'Andrea' };
 
 type Row = Record<string, unknown> & { id: string };
 
 const now = () => new Date().toISOString();
 const normalize = (s: string) => s.trim().normalize('NFD').replace(/[̀-ͯ]/g, '').toLowerCase();
 
-/** Datos de partida: 1 hogar, 2 listas, 3 categorías, 5 productos y 5 ítems (1 ya comprado). */
+/** Datos de partida: 1 hogar con 2 personas, 2 listas, 3 categorías, 5 productos y 5 ítems (1 ya comprado).
+ *  La leche la añadió Andrea y el lavavajillas lo compró Andrea; el resto es del usuario de la sesión. */
 export function createSeed() {
   const t = now();
   const categories: Row[] = [
@@ -64,12 +67,16 @@ export function createSeed() {
     note,
     is_checked,
     checked_at: null,
-    checked_by: null,
+    checked_by: is_checked ? PARTNER.id : null,
     archived_at: null,
-    created_by: USER.id,
+    created_by: id === 'i-leche' ? PARTNER.id : USER.id,
     created_at: t,
     updated_at: t,
   }));
+  const profiles: Row[] = [
+    { id: USER.id, display_name: 'Adrian', created_at: t },
+    { id: PARTNER.id, display_name: PARTNER.name, created_at: t },
+  ];
   const lists: Row[] = [
     { id: LIST_ID, name: 'Compra semanal', sort_order: 0 },
     { id: 'list-2', name: 'Farmacia', sort_order: 1 },
@@ -82,7 +89,7 @@ export function createSeed() {
     updated_at: t,
   }));
 
-  return { categories, products, list_items, lists };
+  return { categories, products, list_items, lists, profiles };
 }
 
 export type MockDb = ReturnType<typeof createSeed>;
@@ -192,6 +199,18 @@ export async function mockSupabase(page: Page, db: MockDb = createSeed()) {
     if (path === '/auth/v1/user') return json(user);
     if (path === '/auth/v1/logout') return route.fulfill({ status: 204 });
 
+    // --- Funciones SQL (rpc) ---
+    // reorder_categories / reorder_lists: sort_order = posición × 10, como en la migración.
+    const rpc = path.match(/^\/rest\/v1\/rpc\/reorder_(categories|lists)$/);
+    if (rpc && method === 'POST') {
+      const { ids } = req.postDataJSON() as { ids: string[] };
+      ids.forEach((id, i) => {
+        const row = db[rpc[1] as 'categories' | 'lists'].find((r) => r.id === id);
+        if (row) row.sort_order = (i + 1) * 10;
+      });
+      return route.fulfill({ status: 204 });
+    }
+
     // --- REST ---
     const table = path.replace('/rest/v1/', '');
     if (table === 'household_members') return respondRows([{ household: { id: HOUSEHOLD_ID, name: 'Casa' } }]);
@@ -232,6 +251,13 @@ export async function mockSupabase(page: Page, db: MockDb = createSeed()) {
 
     if (method === 'PATCH') {
       const changes = req.postDataJSON();
+      // Como el trigger list_items_track_checked del servidor: quién y cuándo marca, lo pone la base de datos.
+      if (table === 'list_items' && 'is_checked' in changes) {
+        Object.assign(
+          changes,
+          changes.is_checked ? { checked_by: USER.id, checked_at: now() } : { checked_by: null, checked_at: null },
+        );
+      }
       const targets = applyFilters(rows, url.searchParams);
       targets.forEach((r) => Object.assign(r, changes, { updated_at: now() }));
       return targets.length && wantsObject ? respondRows(targets.map(present)) : route.fulfill({ status: 204 });

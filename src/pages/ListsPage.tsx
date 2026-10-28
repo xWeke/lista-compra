@@ -1,4 +1,4 @@
-// Portada "Mis listas": listas del hogar con nº de pendientes.
+// Portada "Mis listas": listas del hogar con nº de pendientes; se ordenan arrastrando desde ≡.
 import { useState } from 'react';
 import { Link, useNavigate } from 'react-router';
 
@@ -8,6 +8,7 @@ import { EmptyState } from '@/components/EmptyState';
 import { IconButton } from '@/components/IconButton';
 import { Page } from '@/components/Page';
 import { PromptModal } from '@/components/PromptModal';
+import { SortableList } from '@/components/SortableList';
 import { useHousehold } from '@/features/household/hooks';
 import type { ListSummary } from '@/features/lists/api';
 import { useListMutations, useLists } from '@/features/lists/hooks';
@@ -84,9 +85,15 @@ export function ListsPage() {
       ) : !lists.data?.length ? (
         <EmptyState title="No hay listas" message="Crea la primera." />
       ) : (
-        <ul>
-          {lists.data.map((list) => (
-            <li key={list.id} className={styles.card}>
+        <SortableList
+          items={lists.data}
+          getId={(list) => list.id}
+          getLabel={(list) => list.name}
+          onReorder={(ids) => mutations.reorder.mutate(ids)}
+          rowClassName={styles.card}
+          renderItem={(list, handle) => (
+            <>
+              {handle}
               <Link to={`/listas/${list.id}`} className={styles.cardMain}>
                 <span className={styles.name}>{list.name}</span>
                 <span className={styles.counts}>
@@ -100,9 +107,9 @@ export function ListsPage() {
                 onClick={() => setPrompt({ mode: 'rename', list })}
               />
               <IconButton symbol="🗑" label={`Borrar ${list.name}`} onClick={() => onDelete(list)} />
-            </li>
-          ))}
-        </ul>
+            </>
+          )}
+        />
       )}
 
       {/* Apariencia: se guarda en este dispositivo (cada uno puede tener la suya). */}

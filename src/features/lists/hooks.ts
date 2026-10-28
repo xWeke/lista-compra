@@ -1,10 +1,13 @@
 // Hooks de listas: consultas cacheadas + mutaciones + tiempo real.
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
 
+import { notifyError } from '@/lib/confirm';
+
 import { queryKeys } from '@/lib/query-client';
 import { useRealtimeInvalidation } from '@/lib/realtime';
+import { sortByIds } from '@/lib/reorder';
 
-import { createList, deleteList, fetchList, fetchLists, renameList } from './api';
+import { createList, deleteList, fetchList, fetchLists, renameList, reorderLists, type ListSummary } from './api';
 
 export function useLists(householdId: string | undefined) {
   const enabled = !!householdId;
@@ -28,7 +31,8 @@ export function useList(listId: string) {
 
 export function useListMutations(householdId: string) {
   const queryClient = useQueryClient();
-  const refresh = () => queryClient.invalidateQueries({ queryKey: queryKeys.lists(householdId) });
+  const key = queryKeys.lists(householdId);
+  const refresh = () => queryClient.invalidateQueries({ queryKey: key });
 
   return {
     create: useMutation({ mutationFn: (name: string) => createList(householdId, name), onSuccess: refresh }),
@@ -40,5 +44,20 @@ export function useListMutations(householdId: string) {
       },
     }),
     remove: useMutation({ mutationFn: deleteList, onSuccess: refresh }),
+    /** Orden nuevo tras arrastrar. Optimista: la fila se queda donde la sueltas; si falla, vuelve a su sitio. */
+    reorder: useMutation({
+      mutationFn: (ids: string[]) => reorderLists(ids),
+      onMutate: async (ids) => {
+        await queryClient.cancelQueries({ queryKey: key });
+        const previous = queryClient.getQueryData<ListSummary[]>(key);
+        if (previous) queryClient.setQueryData(key, sortByIds(previous, ids));
+        return { previous };
+      },
+      onError: (error, _ids, ctx) => {
+        if (ctx?.previous) queryClient.setQueryData(key, ctx.previous);
+        notifyError(error);
+      },
+      onSettled: refresh,
+    }),
   };
 }

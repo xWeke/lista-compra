@@ -10,6 +10,9 @@ const PORT = 4174;
 export default defineConfig({
   testDir: './tests/e2e',
   fullyParallel: true,
+  // En local, máximo 3 navegadores a la vez: el PC del trabajo va justo de RAM y con 6 WebKit en paralelo
+  // las pruebas fallaban al azar por falta de memoria. En GitHub Actions, el valor por defecto.
+  workers: process.env.CI ? undefined : 3,
   forbidOnly: !!process.env.CI,
   retries: process.env.CI ? 1 : 0,
   reporter: process.env.CI ? [['list'], ['html', { open: 'never' }]] : [['list']],

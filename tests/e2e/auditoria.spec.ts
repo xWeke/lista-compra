@@ -8,10 +8,12 @@ const MIN_TAP = 38;
 
 async function audit(page: Page) {
   return page.evaluate((minTap) => {
-    const interactive = [...document.querySelectorAll<HTMLElement>('a, button, input, textarea')].filter((el) => {
-      const r = el.getBoundingClientRect();
-      return r.width > 0 && r.height > 0;
-    });
+    const interactive = [...document.querySelectorAll<HTMLElement>('a, button, input, select, textarea')].filter(
+      (el) => {
+        const r = el.getBoundingClientRect();
+        return r.width > 0 && r.height > 0;
+      },
+    );
     const describe = (el: HTMLElement) =>
       `${el.tagName} "${(el.getAttribute('aria-label') || el.textContent || '').trim().slice(0, 25)}"`;
     return {
@@ -24,8 +26,11 @@ async function audit(page: Page) {
           const r = el.getBoundingClientRect();
           return `${describe(el)} ${Math.round(r.width)}x${Math.round(r.height)}`;
         }),
-      sinTouchAction: interactive.filter((el) => getComputedStyle(el).touchAction !== 'manipulation').map(describe),
-      camposSinNombre: [...document.querySelectorAll<HTMLInputElement>('input, textarea')]
+      // 'none' también vale: lo usan las asas ≡ de arrastrar (tampoco hacen zoom por doble toque).
+      sinTouchAction: interactive
+        .filter((el) => !['manipulation', 'none'].includes(getComputedStyle(el).touchAction))
+        .map(describe),
+      camposSinNombre: [...document.querySelectorAll<HTMLInputElement>('input, select, textarea')]
         .filter((el) => !el.labels?.length && !el.getAttribute('aria-label'))
         .map(describe),
       scrollHorizontal: document.documentElement.scrollWidth > window.innerWidth + 1,
@@ -74,6 +79,12 @@ test.describe('Auditoría', () => {
       test.info().annotations.push({ type: 'aviso', description: 'Este navegador no soporta overscroll-behavior' });
     }
     await expectClean(page, 'Panel de edición');
+    await page.keyboard.press('Escape');
+    await expect(panel).toBeHidden();
+
+    await page.getByRole('button', { name: 'Organizar' }).click();
+    await expect(page.getByRole('combobox', { name: 'Categoría de Leche entera' })).toBeVisible();
+    await expectClean(page, 'Lista en modo Organizar');
   });
 
   test('categorías', async ({ app, page }) => {

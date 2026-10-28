@@ -1,7 +1,8 @@
 .row {
   display: flex;
   align-items: center;
-  padding: var(--space-xs) var(--space-xs) var(--space-xs) var(--space-lg);
+  gap: var(--space-xs);
+  padding: var(--space-xs);
   margin-bottom: var(--space-md);
   border: var(--border-card) solid var(--color-border);
   border-radius: var(--radius-lg);

@@ -337,6 +337,8 @@ export type Database = {
     Functions: {
       is_household_member: { Args: { hh: string }; Returns: boolean };
       normalize_name: { Args: { value: string }; Returns: string };
+      reorder_categories: { Args: { ids: string[] }; Returns: undefined };
+      reorder_lists: { Args: { ids: string[] }; Returns: undefined };
       seed_household_defaults: { Args: { hh: string }; Returns: undefined };
     };
     Enums: {

@@ -19,6 +19,9 @@ El usuario es administrador de sistemas (domina BD e infraestructura, menos fron
   pequeño: los tamaños de `--font-*` son algo mayores de lo habitual. Contraste de la paleta verificado (WCAG AA).
 - **Supabase**: Postgres + Auth (email/contraseña, registro público desactivado) + Realtime. Seguridad con **RLS**.
 - **TanStack Query** para caché; Realtime solo *invalida* queries (no fusiona eventos a mano).
+- **dnd-kit** (`@dnd-kit/core` + `sortable`) para ordenar arrastrando, siempre a través de `components/SortableList.tsx`
+  (asa ≡ con `touch-action: none`; solo el asa arrastra, así el resto de la fila sigue desplazando la página; también con teclado).
+  El orden se guarda con las funciones SQL `reorder_categories` / `reorder_lists` (una transacción, `sort_order` = posición × 10).
 - **vite-plugin-pwa**: manifest + service worker (`registerType: 'autoUpdate'`). Iconos en `public/` generados desde `public/icon.svg`.
 - Lint con **oxlint** (`.oxlintrc.json`), formato con **Prettier** (`.prettierrc`).
 - Despliegue: **GitHub Actions** (`.github/workflows/deploy.yml`) en cada push a `main`, solo si pasan lint, tipos y pruebas E2E.
@@ -39,7 +42,7 @@ Comprobaciones antes de dar algo por terminado:
 
 ```bash
 npm run typecheck && npm run lint && npx prettier --check "src/**/*.{ts,tsx,css}" "tests/**/*.ts" && npm run build
-npm run test:e2e        # pruebas E2E (WebKit, Supabase simulado); ver skill probar-app
+npm run test:e2e        # pruebas E2E: SOLO cuando el usuario lo pida (~2 min); en GitHub Actions corren en cada push
 ```
 
 ### Supabase (CLI en devDependencies)
@@ -63,7 +66,7 @@ Procedimiento para aplicar una migración desde aquí:
 1. El usuario pega el fichero de `supabase/migrations/` en Supabase → SQL Editor → Run.
 2. Y la registra: `insert into supabase_migrations.schema_migrations (version, name) values ('<timestamp>', '<nombre>') on conflict do nothing;`
 3. `npm run db:types` y `npm run typecheck`.
-Desde otra red, `npm run db:push` normal. Proyecto: `wnpzgrnffjbmcpwxasgh` (eu-central-1). Hogar "Casa" creado (miembro: Adrian; pareja pendiente de alta).
+Desde otra red, `npm run db:push` normal. Proyecto: `wnpzgrnffjbmcpwxasgh` (eu-central-1). Hogar "Casa" creado (miembros: Adrian y Andrea).
 
 ### Despliegue (GitHub Pages)
 

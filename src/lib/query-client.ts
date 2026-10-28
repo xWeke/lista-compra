@@ -13,6 +13,7 @@ export const queryClient = new QueryClient({
 
 export const queryKeys = {
   household: ['household'] as const,
+  members: (householdId: string) => ['members', householdId] as const,
   lists: (householdId: string) => ['lists', householdId] as const,
   list: (listId: string) => ['list', listId] as const,
   items: (listId: string) => ['items', listId] as const,

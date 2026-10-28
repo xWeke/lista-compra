@@ -1,0 +1,23 @@
+.row {
+  position: relative;
+}
+
+/* La fila que se está arrastrando: por encima de las demás y "levantada" (sombra más larga) */
+.row[data-dragging='true'] {
+  z-index: 1;
+  box-shadow: var(--shadow-hard);
+}
+
+/* Asa ≡: touch-action none = el dedo sobre el asa arrastra la fila en vez de desplazar la página */
+.handle {
+  composes: button from './IconButton.module.css';
+  flex: none;
+  touch-action: none;
+  cursor: grab;
+  font-weight: 700;
+}
+
+.row[data-dragging='true'] .handle {
+  cursor: grabbing;
+  color: var(--color-accent);
+}

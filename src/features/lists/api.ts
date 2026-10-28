@@ -42,3 +42,9 @@ export async function deleteList(listId: string) {
   const { error } = await supabase.from('lists').delete().eq('id', listId);
   if (error) throw error;
 }
+
+/** Guarda el orden nuevo (ids de arriba abajo) en una sola transacción: función SQL reorder_lists. */
+export async function reorderLists(ids: string[]) {
+  const { error } = await supabase.rpc('reorder_lists', { ids });
+  if (error) throw error;
+}

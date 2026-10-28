@@ -64,6 +64,53 @@
   font-size: var(--font-sm);
 }
 
+/* Quién lo añadió o compró: más discreto que la nota, en cursiva para distinguirlo */
+.byline {
+  color: var(--color-text-muted);
+  font-size: var(--font-sm);
+  font-style: italic;
+}
+
+/* Modo Organizar: el texto ya no es un botón (tocarlo no marca nada) */
+.info {
+  flex: 1;
+  min-width: 0;
+  padding: var(--space-md);
+}
+
+/* Desplegable de categoría. Sin el aspecto de Safari (redondeado y degradado): el triángulo ▾ lo pinta el envoltorio */
+.selectWrap {
+  position: relative;
+  flex: none;
+  max-width: 48%;
+  margin: var(--space-xs) var(--space-xs) var(--space-xs) 0;
+}
+
+.selectWrap::after {
+  content: '▾';
+  position: absolute;
+  top: 50%;
+  right: var(--space-sm);
+  transform: translateY(-50%);
+  pointer-events: none;
+}
+
+.select {
+  appearance: none;
+  width: 100%;
+  min-height: var(--tap-size);
+  padding: var(--space-xs) var(--space-xl) var(--space-xs) var(--space-sm);
+  border: var(--border-control) solid var(--color-border-strong);
+  border-radius: var(--radius-lg);
+  background: var(--color-surface-alt);
+  box-shadow: var(--shadow-input);
+  color: var(--color-text);
+  font: inherit;
+  font-size: var(--font-md); /* ≥ 16px: si no, Safari en iPhone hace zoom al tocarlo */
+  text-overflow: ellipsis;
+  cursor: pointer;
+}
+
 /* Comprado: sin sombra (queda "plano", en segundo plano), círculo relleno y nombre tachado */
 .row[data-checked='true'] {
   box-shadow: none;

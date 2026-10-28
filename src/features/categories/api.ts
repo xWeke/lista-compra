@@ -32,12 +32,8 @@ export async function deleteCategory(id: string) {
   if (error) throw error;
 }
 
-/** Intercambia el orden de dos categorías (subir/bajar). */
-export async function swapCategoryOrder(a: Category, b: Category) {
-  const results = await Promise.all([
-    supabase.from('categories').update({ sort_order: b.sort_order }).eq('id', a.id),
-    supabase.from('categories').update({ sort_order: a.sort_order }).eq('id', b.id),
-  ]);
-  const failed = results.find((r) => r.error);
-  if (failed?.error) throw failed.error;
+/** Guarda el orden nuevo (ids de arriba abajo) en una sola transacción: función SQL reorder_categories. */
+export async function reorderCategories(ids: string[]) {
+  const { error } = await supabase.rpc('reorder_categories', { ids });
+  if (error) throw error;
 }

@@ -154,6 +154,7 @@ select {
 a,
 button,
 input,
+select,
 textarea,
 label {
   touch-action: manipulation;
@@ -178,6 +179,7 @@ textarea::placeholder {
 
 a:focus-visible,
 input:focus-visible,
+select:focus-visible,
 textarea:focus-visible,
 button:focus-visible {
   outline: 2px solid var(--color-accent);

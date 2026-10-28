@@ -143,15 +143,80 @@ test.describe('Lista de la compra', () => {
   });
 });
 
-test.describe('Categorías', () => {
-  test('se pueden reordenar con las flechas', async ({ app, page }) => {
+test.describe('Quién lo hizo', () => {
+  test('se ve quién añadió o compró cada producto, solo si fue la otra persona', async ({ app, page }) => {
+    await app.openList();
+    // Andrea añadió la leche y compró el lavavajillas.
+    await expect(page.getByRole('checkbox', { name: /Leche entera/ })).toContainText('Añadido por Andrea');
+    await expect(page.getByRole('checkbox', { name: /Lavavajillas/ })).toContainText('Comprado por Andrea');
+    // Lo añadido por mí no lleva etiqueta.
+    await expect(page.getByRole('checkbox', { name: /Huevos/ })).not.toContainText(' por ');
+
+    // Si lo marco yo, pasa a Comprados sin etiqueta (y deja de decir "Añadido por").
+    const leche = page.getByRole('checkbox', { name: /Leche entera/ });
+    await leche.click();
+    await expect(leche).toHaveAttribute('aria-checked', 'true');
+    await expect(leche).not.toContainText(' por ');
+  });
+});
+
+test.describe('Organizar', () => {
+  test('el modo Organizar cambia la categoría de un producto con el desplegable y se recuerda', async ({
+    app,
+    page,
+    db,
+  }) => {
+    await app.openList();
+    await page.getByRole('button', { name: 'Organizar' }).click();
+    // En este modo, tocar el producto no lo marca: no hay casillas ni barra de añadir.
+    await expect(page.getByRole('checkbox')).toHaveCount(0);
+    await expect(page.getByLabel('Producto a añadir')).toHaveCount(0);
+
+    await page
+      .getByRole('combobox', { name: 'Categoría de Pan de molde' })
+      .selectOption({ label: '🥦 Fruta y verdura' });
+    const fruta = page.locator('section').filter({ has: page.getByRole('heading', { name: /Fruta y verdura/ }) });
+    await expect(fruta.getByRole('combobox', { name: 'Categoría de Pan de molde' })).toBeVisible();
+    await expect(page.getByRole('heading', { name: 'Sin categoría' })).toHaveCount(0);
+    await expect.poll(() => db.products.find((p) => p.id === 'p-pan')?.default_category_id).toBe('cat-fruta');
+
+    await page.getByRole('button', { name: 'Hecho' }).click();
+    await expect(fruta.getByRole('checkbox', { name: /Pan de molde/ })).toBeVisible();
+    await expect(page.getByLabel('Producto a añadir')).toBeVisible();
+  });
+});
+
+test.describe('Reordenar', () => {
+  test('las categorías se reordenan arrastrando el asa ≡', async ({ app, page, db }) => {
     await app.login();
     await page.getByRole('link', { name: 'Categorías' }).click();
-    const nombres = page.getByRole('listitem');
-    await expect(nombres.first()).toContainText('Fruta y verdura');
-    await nombres.first().getByRole('button', { name: 'Bajar' }).click();
-    await expect(nombres.first()).toContainText('Lácteos y huevos');
-    await expect(nombres.nth(1)).toContainText('Fruta y verdura');
+    const filas = page.getByRole('listitem');
+    await expect(filas.first()).toContainText('Fruta y verdura');
+    // Arrastre en varios pasos, como un dedo, hasta un poco por encima de la primera fila: dnd-kit
+    // coloca la fila en el hueco cuyo centro quede más cerca.
+    const desde = (await page.getByRole('button', { name: 'Mover Limpieza' }).boundingBox())!;
+    const hasta = (await page.getByRole('button', { name: 'Mover Fruta y verdura' }).boundingBox())!;
+    await page.mouse.move(desde.x + desde.width / 2, desde.y + desde.height / 2);
+    await page.mouse.down();
+    await page.mouse.move(hasta.x + hasta.width / 2, hasta.y - 20, { steps: 15 });
+    await page.mouse.up();
+    await expect(filas.first()).toContainText('Limpieza');
+    await expect(filas.nth(1)).toContainText('Fruta y verdura');
+    await expect
+      .poll(() => [...db.categories].sort((a, b) => Number(a.sort_order) - Number(b.sort_order)).map((c) => c.id))
+      .toEqual(['cat-limpieza', 'cat-fruta', 'cat-lacteos']);
+  });
+
+  test('las listas se reordenan con el teclado (Espacio, flecha, Espacio)', async ({ app, page, db }) => {
+    await app.login();
+    const filas = page.getByRole('listitem');
+    await expect(filas.first()).toContainText('Compra semanal');
+    await page.getByRole('button', { name: 'Mover Farmacia' }).focus();
+    await page.keyboard.press('Space');
+    await page.keyboard.press('ArrowUp');
+    await page.keyboard.press('Space');
+    await expect(filas.first()).toContainText('Farmacia');
+    await expect.poll(() => db.lists.find((l) => l.id === 'list-2')?.sort_order).toBe(10);
   });
 });
 
