@@ -13,6 +13,7 @@
     "db:new": "supabase migration new",
     "db:types": "supabase gen types typescript --linked > src/types/database.ts",
     "import:dia": "node scripts/dia-to-sql.mjs",
+    "import:costco": "node scripts/costco-to-sql.mjs",
     "test:e2e": "playwright test",
     "test:e2e:ui": "playwright test --ui"
   },

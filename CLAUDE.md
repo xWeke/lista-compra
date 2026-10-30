@@ -89,7 +89,11 @@ Desde otra red, `npm run db:push` normal. Proyecto: `wnpzgrnffjbmcpwxasgh` (eu-c
 - **Dia** (bloquea el acceso automático): no hay volcado diario ni se automatiza saltarse su anti-bot. Solo se importa un
   CSV que trae el usuario: `npm run import:dia [-- ruta.csv]` (por defecto `~/Downloads/dia_productos.csv`) genera
   `supabase/imports/dia-parte-N.sql` (ignorado por git) para pegar en orden en el SQL Editor. Precios = foto del día del CSV.
-- Súpers que **no** se pueden volcar (bloquean el acceso automático; no saltárselo): Alcampo, Dia, Carrefour,
+- **Costco** (sameday.costco.es, de Instacart: su robots.txt prohíbe todo acceso automático): igual que Dia, solo CSV del
+  usuario con `npm run import:costco [-- ruta.csv]` (por defecto `~/Downloads/costco_productos.csv`). El CSV no trae
+  precio por kg/L: se calcula del `formato` ("12 x 55 g", "6 x 1,5 L", "40 unidad"; "4,89 € / kg" = a peso). La primera
+  parte crea la fila `costco` en `stores` si no existe. Lo común a ambos importadores está en `scripts/lib/catalog-sql.mjs`.
+- Súpers que **no** se pueden volcar (bloquean el acceso automático; no saltárselo): Alcampo, Dia, Costco, Carrefour,
   El Corte Inglés, Hipercor. Lidl no vende comida online. Posibles: Eroski (HTML), Consum (API JSON con EAN).
 - Desplegar (funciona desde la red del trabajo, va por HTTPS): `npx supabase functions deploy <nombre> --use-api`.
 
