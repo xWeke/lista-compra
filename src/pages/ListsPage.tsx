@@ -12,12 +12,24 @@ import { SortableList } from '@/components/SortableList';
 import { useHousehold } from '@/features/household/hooks';
 import type { ListSummary } from '@/features/lists/api';
 import { useListMutations, useLists } from '@/features/lists/hooks';
+import type { PushStatus } from '@/features/push/api';
+import { usePushStatus, usePushToggle } from '@/features/push/hooks';
 import { useAuth } from '@/lib/auth';
 import { confirm, notifyError } from '@/lib/confirm';
 import { plural } from '@/lib/format';
 import { THEME_OPTIONS, applyTheme, getThemeChoice, type ThemeChoice } from '@/lib/theme';
 
 import styles from './ListsPage.module.css';
+
+/** Explicación bajo "Avisos" según el estado en este dispositivo */
+const PUSH_TEXT: Record<PushStatus, string> = {
+  on: 'Activados en este dispositivo: te avisa cuando la otra persona añade cosas o empieza a comprar.',
+  off: 'Recibe un aviso cuando la otra persona añade cosas o empieza a hacer la compra.',
+  install:
+    'En el iPhone, añade la app a la pantalla de inicio (Compartir → Añadir a pantalla de inicio) y ábrela desde ahí.',
+  denied: 'Los avisos están bloqueados para esta app. Actívalos en los ajustes del móvil o del navegador.',
+  unsupported: 'Este navegador no admite avisos.',
+};
 
 type PromptState = { mode: 'create' } | { mode: 'rename'; list: ListSummary } | null;
 
@@ -30,13 +42,21 @@ export function ListsPage() {
   const mutations = useListMutations(householdId ?? '');
   const [prompt, setPrompt] = useState<PromptState>(null);
   const [theme, setTheme] = useState<ThemeChoice>(getThemeChoice);
+  const pushStatus = usePushStatus();
+  const pushToggle = usePushToggle();
+
+  // Al salir se quitan los avisos de este dispositivo: si entra la otra persona, no le llegan los suyos
+  const onSignOut = async () => {
+    if (pushStatus.data === 'on') await pushToggle.mutateAsync(false).catch(() => undefined);
+    await signOut();
+  };
 
   const actions = (
     <>
       <ButtonLink to="/categorias" variant="ghost" compact>
         Categorías
       </ButtonLink>
-      <Button variant="ghost" compact onClick={signOut}>
+      <Button variant="ghost" compact onClick={onSignOut}>
         Salir
       </Button>
     </>
@@ -127,6 +147,21 @@ export function ListsPage() {
             setTheme(t);
           }}
         />
+      </section>
+
+      <section className={styles.settings} aria-labelledby="avisos">
+        <h2 id="avisos" className={styles.settingsTitle}>
+          Avisos
+        </h2>
+        {pushStatus.data && <p className={styles.settingsText}>{PUSH_TEXT[pushStatus.data]}</p>}
+        {(pushStatus.data === 'on' || pushStatus.data === 'off') && (
+          <Button
+            variant="secondary"
+            loading={pushToggle.isPending}
+            onClick={() => pushToggle.mutate(pushStatus.data === 'off', { onError: notifyError })}>
+            {pushStatus.data === 'on' ? 'Desactivar avisos' : 'Activar avisos'}
+          </Button>
+        )}
       </section>
 
       <PromptModal

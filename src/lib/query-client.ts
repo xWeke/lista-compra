@@ -23,4 +23,6 @@ export const queryKeys = {
   /** Emparejamientos de unos productos en un súper (la clave incluye los ids: cambian al añadir a la lista). */
   storeLinks: (storeId: string, productIds: string[]) => ['storeLinks', storeId, productIds] as const,
   storeSearch: (storeId: string, query: string) => ['storeSearch', storeId, query] as const,
+  /** Estado de los avisos en este dispositivo (permiso del navegador + suscripción) */
+  pushStatus: ['pushStatus'] as const,
 };

@@ -95,6 +95,14 @@ Desde otra red, `npm run db:push` normal. Proyecto: `wnpzgrnffjbmcpwxasgh` (eu-c
   parte crea la fila `costco` en `stores` si no existe. Lo común a ambos importadores está en `scripts/lib/catalog-sql.mjs`.
 - Súpers que **no** se pueden volcar (bloquean el acceso automático; no saltárselo): Alcampo, Dia, Costco, Carrefour,
   El Corte Inglés, Hipercor. Lidl no vende comida online. Posibles: Eroski (HTML), Consum (API JSON con EAN).
+- `supabase/functions/send-push/`: **avisos al móvil** (Web Push). Triggers en `list_items` apuntan en `push_events`
+  ('added' al añadir; 'shopping' al marcar el primero de una lista tras 2 h sin marcar). pg_cron cada 30 s
+  (`supabase/setup_push.sql`) llama a la función solo si `push_events_ready()`; `claim_push_batches()` agrupa
+  (60 s sin añadir o 5 min desde el primero), marca enviado y da los destinatarios (los demás miembros, nunca quien lo hizo).
+  Dispositivos en `push_subscriptions` (la app solo usa `save/delete_push_subscription`; al salir se borra el del dispositivo).
+  Secrets `VAPID_PUBLIC_KEY` / `VAPID_PRIVATE_KEY` en Supabase; la pública también en `src/features/push/api.ts`.
+  En el móvil: `public/push-sw.js` (importado por el service worker con `workbox.importScripts`). Solo en la build
+  publicada (en `npm run dev` no hay service worker) y en iPhone solo con la app en la pantalla de inicio (iOS 16.4+).
 - Desplegar (funciona desde la red del trabajo, va por HTTPS): `npx supabase functions deploy <nombre> --use-api`.
 
 ### Despliegue (GitHub Pages)

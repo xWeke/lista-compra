@@ -55,3 +55,9 @@
   color: var(--color-text-muted);
   font-size: var(--font-sm);
 }
+
+.settingsText {
+  margin: 0;
+  color: var(--color-text-muted);
+  font-size: var(--font-sm);
+}

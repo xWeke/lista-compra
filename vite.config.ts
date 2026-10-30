@@ -42,6 +42,7 @@ export default defineConfig({
       workbox: {
         // Solo se cachean los ficheros de la app; las llamadas a Supabase van siempre a la red.
         globPatterns: ['**/*.{js,css,html,svg,png,ico}', '**/*latin*.woff2'], // fuentes: solo los subconjuntos latinos
+        importScripts: ['push-sw.js'], // avisos al móvil (public/push-sw.js)
       },
     }),
   ],

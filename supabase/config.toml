@@ -427,3 +427,8 @@ verify_jwt = false
 # Volcado del catálogo de Ahorramas por partes (lo lanza pg_cron cada 10 min de madrugada).
 [functions.sync-ahorramas]
 verify_jwt = false
+
+# Avisos al móvil (Web Push). La lanza pg_cron cada 30 s si hay avisos en cola; se protege con el mismo
+# secreto de Vault que los volcados (check_sync_secret).
+[functions.send-push]
+verify_jwt = false

@@ -363,6 +363,98 @@ export type Database = {
         }
         Relationships: []
       }
+      push_events: {
+        Row: {
+          actor_id: string
+          created_at: string
+          household_id: string
+          id: string
+          item_name: string | null
+          kind: string
+          list_id: string
+          list_item_id: string | null
+          sent_at: string | null
+        }
+        Insert: {
+          actor_id: string
+          created_at?: string
+          household_id: string
+          id?: string
+          item_name?: string | null
+          kind: string
+          list_id: string
+          list_item_id?: string | null
+          sent_at?: string | null
+        }
+        Update: {
+          actor_id?: string
+          created_at?: string
+          household_id?: string
+          id?: string
+          item_name?: string | null
+          kind?: string
+          list_id?: string
+          list_item_id?: string | null
+          sent_at?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "push_events_household_id_fkey"
+            columns: ["household_id"]
+            isOneToOne: false
+            referencedRelation: "households"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "push_events_list_id_fkey"
+            columns: ["list_id"]
+            isOneToOne: false
+            referencedRelation: "list_summaries"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "push_events_list_id_fkey"
+            columns: ["list_id"]
+            isOneToOne: false
+            referencedRelation: "lists"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "push_events_list_item_id_fkey"
+            columns: ["list_item_id"]
+            isOneToOne: false
+            referencedRelation: "list_items"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      push_subscriptions: {
+        Row: {
+          auth: string
+          created_at: string
+          endpoint: string
+          id: string
+          p256dh: string
+          user_id: string
+        }
+        Insert: {
+          auth: string
+          created_at?: string
+          endpoint: string
+          id?: string
+          p256dh: string
+          user_id: string
+        }
+        Update: {
+          auth?: string
+          created_at?: string
+          endpoint?: string
+          id?: string
+          p256dh?: string
+          user_id?: string
+        }
+        Relationships: []
+      }
       store_product_prices: {
         Row: {
           observed_at: string
@@ -554,10 +646,30 @@ export type Database = {
         Returns: undefined
       }
       check_sync_secret: { Args: { secret: string }; Returns: boolean }
+      claim_push_batches: {
+        Args: never
+        Returns: {
+          actor_name: string
+          item_names: string[]
+          kind: string
+          list_id: string
+          list_name: string
+          recipients: string[]
+        }[]
+      }
+      delete_push_subscription: {
+        Args: { endpoint: string }
+        Returns: undefined
+      }
       is_household_member: { Args: { hh: string }; Returns: boolean }
       normalize_name: { Args: { value: string }; Returns: string }
+      push_events_ready: { Args: never; Returns: boolean }
       reorder_categories: { Args: { ids: string[] }; Returns: undefined }
       reorder_lists: { Args: { ids: string[] }; Returns: undefined }
+      save_push_subscription: {
+        Args: { auth: string; endpoint: string; p256dh: string }
+        Returns: undefined
+      }
       search_store_products: {
         Args: { p_limit?: number; p_query: string; p_store: string }
         Returns: {
